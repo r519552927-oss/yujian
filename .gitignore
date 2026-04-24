@@ -1,0 +1,32 @@
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Node (如果用到)
+node_modules/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.bak
+.cache/
+
+# 大文件 (如果需要可注释掉)
+# *.zip
+# *.rar
+# *.7z
+# *.pdf

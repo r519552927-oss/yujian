@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电机电磁场谐波分析 — 交互式理论图解</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'PingFang SC','Microsoft YaHei',sans-serif; background:#0a0e1a; color:#d0d8f0; min-height:100vh; }
+  nav { position:sticky; top:0; z-index:100; background:rgba(10,14,26,0.95); backdrop-filter:blur(12px); border-bottom:1px solid rgba(100,180,255,0.12); padding:0 40px; display:flex; align-items:center; gap:28px; height:58px; }
+  nav .logo { font-size:17px; font-weight:700; color:#64b4ff; letter-spacing:0.5px; }
+  nav .nav-links { display:flex; gap:4px; }
+  nav .nav-links button { background:none; border:none; color:#7a8aaa; font-size:13px; padding:6px 14px; border-radius:6px; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+  nav .nav-links button:hover { color:#64b4ff; background:rgba(100,180,255,0.08); }
+  nav .nav-links button.active { color:#fff; background:rgba(100,180,255,0.18); }
+  .container { max-width:1200px; margin:0 auto; padding:36px 24px 80px; }
+  .section-title { font-size:24px; font-weight:700; color:#fff; margin-bottom:4px; }
+  .section-sub { font-size:12px; color:#5a6a8a; margin-bottom:24px; letter-spacing:0.3px; }
+  .section { margin-bottom:56px; }
+  .card { background:#111827; border:1px solid rgba(100,180,255,0.1); border-radius:14px; padding:24px; margin-bottom:18px; position:relative; overflow:hidden; }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#64b4ff,transparent); opacity:0.4; }
+  .card h3 { font-size:14px; color:#64b4ff; margin-bottom:14px; font-weight:600; letter-spacing:0.3px; }
+  .chart-wrap { position:relative; background:#0d1520; border-radius:10px; overflow:hidden; }
+  canvas.chart { display:block; width:100% !important; }
+  .controls { display:flex; flex-wrap:wrap; gap:18px; margin:14px 0; padding:14px; background:rgba(100,180,255,0.04); border-radius:10px; }
+  .ctrl { display:flex; flex-direction:column; gap:5px; }
+  .ctrl label { font-size:11px; color:#6a7a9a; display:flex; justify-content:space-between; }
+  .ctrl label span { color:#64b4ff; font-weight:600; font-size:12px; }
+  input[type=range] { -webkit-appearance:none; width:160px; height:4px; border-radius:2px; background:rgba(100,180,255,0.22); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#64b4ff; cursor:pointer; box-shadow:0 0 8px rgba(100,180,255,0.45); }
+  select { background:#1a2540; border:1px solid rgba(100,180,255,0.22); color:#d0d8f0; padding:5px 12px; border-radius:6px; font-family:inherit; font-size:13px; outline:none; cursor:pointer; }
+  select:focus { border-color:#64b4ff; }
+  .formula-box { background:rgba(100,180,255,0.05); border:1px solid rgba(100,180,255,0.15); border-radius:8px; padding:12px 18px; margin:10px 0; font-family:'Georgia',serif; font-size:14px; color:#a0d0ff; text-align:center; letter-spacing:0.5px; }
+  .conclusion { background:rgba(50,200,100,0.06); border:1px solid rgba(50,200,100,0.18); border-radius:8px; padding:12px 16px; font-size:12px; color:#7ec8a0; line-height:1.9; margin-top:10px; }
+  .conclusion strong { color:#50e880; }
+  .legend-row { display:flex; gap:16px; margin-top:8px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#7a8aaa; }
+  .legend-sq { width:10px; height:10px; border-radius:2px; display:inline-block; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { background:rgba(100,180,255,0.09); color:#64b4ff; padding:8px 12px; text-align:left; font-weight:600; border-bottom:1px solid rgba(100,180,255,0.12); }
+  td { padding:7px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#9aa8c4; }
+  td.num { font-family:'Courier New',monospace; color:#a8d4ff; text-align:right; }
+  .flowchart { display:flex; align-items:center; justify-content:center; gap:0; flex-wrap:wrap; margin:16px 0; }
+  .flow-step { background:rgba(100,180,255,0.07); border:1px solid rgba(100,180,255,0.22); border-radius:10px; padding:14px 20px; text-align:center; min-width:130px; }
+  .flow-step .sn { font-size:10px; color:#64b4ff; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .flow-step .st { font-size:13px; font-weight:600; color:#fff; }
+  .flow-arrow { font-size:20px; color:rgba(100,180,255,0.35); padding:0 6px; }
+  .tabs { display:flex; gap:2px; margin-bottom:12px; }
+  .tab { background:none; border:1px solid rgba(100,180,255,0.15); border-bottom:none; border-radius:6px 6px 0 0; color:#6a7a9a; font-size:12px; padding:6px 16px; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+  .tab:hover { color:#64b4ff; }
+  .tab.active { background:rgba(100,180,255,0.12); color:#fff; border-color:rgba(100,180,255,0.3); }
+  @media(max-width:768px){ .two-col{grid-template-columns:1fr} nav{padding:0 16px} }
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)}}
+  .section{animation:fadeInUp 0.45s ease both}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ 电机谐波分析</div>
+  <div class="nav-links">
+    <button class="active" onclick="scrollTo('l2')">第二层 MMF</button>
+    <button onclick="scrollTo('l3')">第三层 磁导</button>
+    <button onclick="scrollTo('l4')">第四层 力波</button>
+    <button onclick="scrollTo('summary')">完整链路</button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════ 第二层 ═══════════════ -->
+<div class="section" id="l2">
+  <div class="section-title">第二层：磁动势（MMF）谐波</div>
+  <div class="section-sub">绕组结构决定的空间频谱 — 方波分解、三相合成、绕组因数、分数槽次谐波</div>
+
+  <!-- 2.1 单线圈MMF -->
+  <div class="card">
+    <h3>2.1 方波 MMF 的傅里叶分解</h3>
+    <div class="chart-wrap"><canvas id="c_single" class="chart" height="230"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>基波幅值 <span id="v_amp">1.00</span></label>
+        <input type="range" id="s_amp" min="0.3" max="2" step="0.05" value="1">
+      </div>
+      <div class="ctrl">
+        <label>衰减系数 <span id="v_decay">1.0×</span></label>
+        <input type="range" id="s_decay" min="0.3" max="3" step="0.1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>最高谐波 <span id="v_order">7</span>次</label>
+        <input type="range" id="s_order" min="3" max="13" step="2" value="7">
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#ff4070"></span> 方波（理想）</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#50e880"></span> 合成正弦（傅里叶）</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#64b4ff"></span> 基波</div>
+    </div>
+  </div>
+
+  <!-- 2.2 三相合成 -->
+  <div class="card">
+    <h3>2.2 三相合成 — 旋转磁场的形成</h3>
+    <div class="chart-wrap"><canvas id="c_3phase" class="chart" height="300"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>电角度 t = <span id="v_t">0</span>°</label>
+        <input type="range" id="s_t" min="0" max="360" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>动画速度 <span id="v_speed">1×</span></label>
+        <input type="range" id="s_speed" min="0.5" max="5" step="0.5" value="1">
+      </div>
+      <div class="ctrl">
+        <label>谐波阶次</label>
+        <select id="sel_harm">
+          <option value="1">ν=1 基波</option>
+          <option value="3">ν=3 三倍数</option>
+          <option value="5">ν=5</option>
+          <option value="7">ν=7</option>
+        </select>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#ff4040"></span> A相</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#40c040"></span> B相</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#4040ff"></span> C相</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#ffb840"></span> 三相合成</div>
+    </div>
+  </div>
+
+  <!-- 2.3 绕组因数 -->
+  <div class="card">
+    <h3>2.3 绕组因数 $k_{w\nu} = k_{d\nu} \times k_{p\nu}$ — 谐波衰减</h3>
+    <div class="chart-wrap"><canvas id="c_wf" class="chart" height="240"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>q = 每极每相槽数 <span id="v_q">2</span></label>
+        <input type="range" id="s_q" min="1" max="6" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>y/τ = 节距比 <span id="v_y">1.00</span></label>
+        <input type="range" id="s_y" min="0.6" max="1" step="0.02" value="1">
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#64b4ff"></span> k<sub>dν</sub> 分布因数</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#ff9040"></span> k<sub>pν</sub> 节距因数</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#50e880"></span> k<sub>wν</sub> 合成</div>
+    </div>
+  </div>
+
+  <!-- 2.4 FSCW次谐波 -->
+  <div class="card">
+    <h3>2.4 分数槽集中绕组 — 次谐波（ν &lt; p）幅值对比</h3>
+    <div class="chart-wrap"><canvas id="c_fscw" class="chart" height="240"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>槽数 Q</label>
+        <select id="sel_Q"><option value="12">12 槽</option><option value="18">18 槽</option><option value="24">24 槽</option></select>
+      </div>
+      <div class="ctrl">
+        <label>极数 2p</label>
+        <select id="sel_poles"><option value="10">10 极</option><option value="8">8 极</option><option value="14">14 极</option><option value="16">16 极</option></select>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#ff6060"></span> 次谐波 ν&lt;p</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#64b4ff"></span> 基波 ν=p</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#a080ff"></span> 高次谐波 ν&gt;p</div>
+    </div>
+    <div class="conclusion" id="c_fscw_txt"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ 第三层 ═══════════════ -->
+<div class="section" id="l3">
+  <div class="section-title">第三层：气隙磁导谐波与卷积混叠</div>
+  <div class="section-sub">槽几何决定的空间调制 — 卡特系数、齿谐波阶次 ν' = νp ± kQ</div>
+
+  <!-- 3.1 磁导分布 -->
+  <div class="card">
+    <h3>3.1 气隙磁导分布 — 槽开口的物理效应</h3>
+    <div class="chart-wrap"><canvas id="c_perm" class="chart" height="230"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>Q = <span id="v_Q3">12</span> 槽</label>
+        <input type="range" id="s_Q3" min="6" max="36" step="2" value="12">
+      </div>
+      <div class="ctrl">
+        <label>b<sub>s</sub>/τ = <span id="v_bs">0.50</span></label>
+        <input type="range" id="s_bs" min="0.1" max="0.9" step="0.05" value="0.5">
+      </div>
+      <div class="ctrl">
+        <label>气隙 δ = <span id="v_delta">1.0</span> mm</label>
+        <input type="range" id="s_delta" min="0.3" max="3" step="0.1" value="1">
+      </div>
+    </div>
+    <div class="formula-box">Carter系数: k<sub>c</sub> ≈ 1 + (b<sub>s</sub>/τ<sub>s</sub>) / [5(1 + b<sub>s</sub>/δ)] &nbsp;|&nbsp; 槽越宽 → k<sub>c</sub>越大 → 等效气隙越大</div>
+  </div>
+
+  <!-- 3.2 FFT -->
+  <div class="card">
+    <h3>3.2 磁导傅里叶频谱 — 各阶次 Λ<sub>k</sub> 幅值</h3>
+    <div class="chart-wrap"><canvas id="c_perm_fft" class="chart" height="230"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>最高阶次 k = <span id="v_kmax">6</span></label>
+        <input type="range" id="s_kmax" min="2" max="12" step="1" value="6">
+      </div>
+      <div class="ctrl">
+        <label>槽型</label>
+        <select id="sel_type">
+          <option value="open">开口槽（最严重）</option>
+          <option value="semi">半闭口槽</option>
+          <option value="closed">闭口槽（最小）</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.3 卷积 -->
+  <div class="card">
+    <h3>3.3 B = F × Λ 卷积混叠 — 齿谐波阶次表</h3>
+    <div class="chart-wrap"><canvas id="c_conv" class="chart" height="280"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>Q = <span id="v_Qc">12</span></label>
+        <input type="range" id="s_Qc" min="6" max="36" step="2" value="12">
+      </div>
+      <div class="ctrl">
+        <label>p = <span id="v_p">5</span></label>
+        <input type="range" id="s_p" min="2" max="10" step="1" value="5">
+      </div>
+    </div>
+    <div class="formula-box">齿谐波: ν' = ν·p ± k·Q &nbsp;(ν=1,5,7；k=0,±1,±2…)</div>
+    <div class="conclusion" id="c_conv_txt"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ 第四层 ═══════════════ -->
+<div class="section" id="l4">
+  <div class="section-title">第四层：径向力波与振动传递链</div>
+  <div class="section-sub">B² → 麦克斯韦应力 → 拍频力波 → 转矩脉动 / 定子模态振动</div>
+
+  <!-- 4.1 力波 -->
+  <div class="card">
+    <h3>4.1 B² → 径向力波 — 拍频效应（ν₁²、ν₂²、交叉项）</h3>
+    <div class="chart-wrap"><canvas id="c_force" class="chart" height="260"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>谐波 ν₁ = <span id="v_v1">1</span></label>
+        <input type="range" id="s_v1" min="1" max="7" step="2" value="1">
+      </div>
+      <div class="ctrl">
+        <label>谐波 ν₂ = <span id="v_v2">5</span></label>
+        <input type="range" id="s_v2" min="1" max="7" step="2" value="5">
+      </div>
+      <div class="ctrl">
+        <label>t = <span id="v_t4">0</span>°</label>
+        <input type="range" id="s_t4" min="0" max="360" step="2" value="0">
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#64b4ff"></span> B₁²</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#ff9040"></span> B₂²</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#50e880"></span> 交叉项（拍频）</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#ff4070"></span> 合成力波</div>
+    </div>
+    <div class="formula-box">力波阶次 r = ν₁ ± ν₂ &nbsp;|&nbsp; 力波频率 f = f₁ ± f₂</div>
+  </div>
+
+  <!-- 4.2 斜槽 -->
+  <div class="card">
+    <h3>4.2 斜槽因数 — 各阶次抑制效果</h3>
+    <div class="chart-wrap"><canvas id="c_skew" class="chart" height="230"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>斜槽角 α = <span id="v_skew">1.0</span> 槽距</label>
+        <input type="range" id="s_skew" min="0" max="2" step="0.1" value="1">
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-sq" style="background:#ff6060"></span> 齿槽阶次（6, 12）</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#a080ff"></span> 11次以上</div>
+      <div class="legend-item"><span class="legend-sq" style="background:#64b4ff"></span> 基波（轻微衰减）</div>
+    </div>
+    <div class="formula-box">k<sub>skew,r</sub> = sin(r·α/2) / (r·α/2) &nbsp;|&nbsp; α=1槽距 → k<sub>skew,6</sub>≈0, k<sub>skew,12</sub>≈0</div>
+  </div>
+
+  <!-- 4.3 LCM -->
+  <div class="card">
+    <h3>4.3 槽极配合对比 — N<sub>cog</sub> = LCM(Q,2p) / p</h3>
+    <div class="chart-wrap"><canvas id="c_lcm" class="chart" height="240"></canvas></div>
+    <div class="two-col" style="margin-top:14px">
+      <div>
+        <table>
+          <thead><tr><th>槽极配合</th><th>LCM</th><th>N_cog</th><th>评估</th></tr></thead>
+          <tbody id="tbl_lcm"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="formula-box">LCM = 最小公倍数<br>N<sub>cog</sub> = LCM / p</div>
+        <div class="conclusion">N<sub>cog</sub> ↑ → 脉动分散到更多阶次 → 幅值 ↓<br>
+        <strong style="color:#50e880">24槽22极 > 18槽16极 > 12槽10极 > 12槽8极</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4.4 模态 -->
+  <div class="card">
+    <h3>4.4 定子振动模态 — 动态放大系数 H(f)</h3>
+    <div class="chart-wrap"><canvas id="c_mode" class="chart" height="240"></canvas></div>
+    <div class="controls">
+      <div class="ctrl">
+        <label>模态阶次 m = <span id="v_m">2</span></label>
+        <input type="range" id="s_m" min="0" max="6" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>f = <span id="v_f">1200</span> Hz</label>
+        <input type="range" id="s_f" min="200" max="5000" step="50" value="1200">
+      </div>
+    </div>
+    <div class="conclusion" id="c_mode_txt"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ 总结 ═══════════════ -->
+<div class="section" id="summary">
+  <div class="section-title">完整链路：谐波的诞生 → 传递 → 危害</div>
+  <div class="section-sub">从绕组结构参数到 NVH 的完整因果链</div>
+  <div class="card">
+    <div class="flowchart">
+      <div class="flow-step"><div class="sn">Step 1</div><div class="st">MMF 谐波</div></div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-step"><div class="sn">Step 2</div><div class="st">磁导谐波</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="sn">Step 3</div><div class="st">B 频谱 FFT</div></div>
+      <div class="flow-arrow">÷2μ₀</div>
+      <div class="flow-step"><div class="sn">Step 4</div><div class="st">径向力波</div></div>
+      <div class="flow-arrow">∫</div>
+      <div class="flow-step"><div class="sn">Step 5</div><div class="st">转矩脉动</div></div>
+      <div class="flow-arrow">或</div>
+      <div class="flow-step"><div class="sn">Step 6</div><div class="st">振动噪声</div></div>
+    </div>
+    <div class="two-col" style="margin-top:20px">
+      <div>
+        <h3 style="color:#64b4ff;font-size:13px;margin-bottom:10px">抑制手段</h3>
+        <table>
+          <thead><tr><th>层级</th><th>方法</th><th>作用</th></tr></thead>
+          <tbody>
+            <tr><td>MMF</td><td>分布绕组、节距优化</td><td>k<sub>wν</sub> ↓</td></tr>
+            <tr><td>磁导</td><td>闭口槽、磁桥优化</td><td>Λ<sub>k</sub> ↓</td></tr>
+            <tr><td>合成</td><td>斜槽 / 斜极</td><td>卷积项 ↓</td></tr>
+            <tr><td>结构</td><td>槽极配合优化</td><td>N<sub>cog</sub> ↑</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="color:#ff9040;font-size:13px;margin-bottom:10px">关键指标</h3>
+        <table>
+          <thead><tr><th>指标</th><th>定义</th><th>目标</th></tr></thead>
+          <tbody>
+            <tr><td>THD</td><td>谐波均方根 / 基波</td><td>&lt; 5%</td></tr>
+            <tr><td>转矩脉动</td><td>(T<sub>max</sub>−T<sub>min</sub>)/T<sub>avg</sub></td><td>&lt; 3%</td></tr>
+            <tr><td>齿槽转矩</td><td>相对额定转矩</td><td>&lt; 1%</td></tr>
+            <tr><td>N<sub>cog</sub></td><td>LCM/p</td><td>越大越好</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   纯 Canvas 图表引擎 — 无任何外部依赖
+   ═══════════════════════════════════════════════════════════ */
+
+const PI = Math.PI, TAU = 2 * PI;
+
+function lcm(a, b) { return Math.abs(a * b) / gcd(a, b); }
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+
+// 响应式 canvas 高分辨率适配（尺寸缓存防重复设置）
+const _canvasCache = {};
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth || 800;
+  const h = parseInt(canvas.getAttribute('data-h')) || 220;
+  const key = id + '_' + w + '_' + h;
+  if (_canvasCache[key] && _canvasCache[key].w === w) {
+    return _canvasCache[key];
+  }
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  const result = { canvas, ctx, w, h, dpr };
+  _canvasCache[key] = result;
+  return result;
+}
+
+// 基础绘图工具
+function clear(ctx, w, h, bg) {
+  ctx.fillStyle = bg || '#0d1520';
+  ctx.fillRect(0, 0, w, h);
+}
+function grid(ctx, x0, y0, w, h, xStep, yStep, color) {
+  color = color || 'rgba(100,180,255,0.07)';
+  ctx.strokeStyle = color; ctx.lineWidth = 0.5;
+  for (let x = x0; x <= x0 + w; x += xStep) { ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + h); ctx.stroke(); }
+  for (let y = y0; y <= y0 + h; y += yStep) { ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke(); }
+}
+function axes(ctx, x0, y0, w, h, xLabel, yLabel) {
+  ctx.strokeStyle = 'rgba(100,180,255,0.3)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + w, y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y0 - h); ctx.stroke();
+  ctx.font = '11px PingFang SC, Microsoft YaHei'; ctx.fillStyle = '#7a8aaa';
+  if (xLabel) ctx.fillText(xLabel, x0 + w - 20, y0 + 16);
+  if (yLabel) { ctx.save(); ctx.translate(x0 - 30, y0 - h / 2); ctx.rotate(-PI/2); ctx.fillText(yLabel, 0, 0); ctx.restore(); }
+}
+function polyLine(ctx, pts, color, lw, dashed) {
+  if (!pts.length) return;
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = lw || 1.5;
+  if (dashed) ctx.setLineDash(dashed);
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  if (dashed) ctx.setLineDash([]);
+}
+function bar(ctx, x, y, bw, bh, color) {
+  ctx.fillStyle = color; ctx.fillRect(x, y - Math.max(bh, 1), bw, Math.max(bh, 1));
+}
+function circle(ctx, x, y, r, fill, stroke, lw) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+function text(ctx, txt, x, y, color, size, align, baseline) {
+  ctx.fillStyle = color || '#d0d8f0'; ctx.font = (size || 12) + 'px PingFang SC, Microsoft YaHei';
+  ctx.textAlign = align || 'center'; ctx.textBaseline = baseline || 'middle';
+  ctx.fillText(txt, x, y);
+}
+function textRight(ctx, txt, x, y, color, size) {
+  ctx.fillStyle = color || '#d0d8f0'; ctx.font = (size || 12) + 'px PingFang SC, Microsoft YaHei';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, x, y);
+}
+
+// 通用 XY 图表绘制器
+function drawXYChart(canvasId, xData, ySeries, xRange, yRange, xLabel, yLabel, xTick, yTick, h) {
+  const { ctx, w, h: ch } = setupCanvas(canvasId);
+  const pad = { l: 52, r: 20, t: 20, b: 44 };
+  const plotW = w - pad.l - pad.r;
+  const plotH = ch - pad.t - pad.b;
+  clear(ctx, w, ch);
+  grid(ctx, pad.l, pad.t, plotW, plotH, plotW / (xTick || 6), plotH / (yTick || 5));
+  axes(ctx, pad.l, pad.t + plotH, plotW, plotH, xLabel, yLabel);
+
+  // Y轴刻度标签
+  for (let i = 0; i <= (yTick || 5); i++) {
+    const val = yRange[0] + (yRange[1] - yRange[0]) * i / (yTick || 5);
+    const y = pad.t + plotH - (i / (yTick || 5)) * plotH;
+    textRight(ctx, val.toFixed(yRange[1] > 10 ? 0 : 1), pad.l - 6, y, '#6a7a9a', 10);
+  }
+  // X轴刻度
+  if (xRange && xTick) {
+    for (let i = 0; i <= xTick; i++) {
+      const val = xRange[0] + (xRange[1] - xRange[0]) * i / xTick;
+      const x = pad.l + (i / xTick) * plotW;
+      text(ctx, val.toFixed(0), x, pad.t + plotH + 14, '#6a7a9a', 10);
+    }
+  }
+
+  ySeries.forEach(series => {
+    const pts = xData.map((x, i) => ({
+      x: pad.l + ((x - (xRange ? xRange[0] : 0)) / (xRange ? xRange[1] - xRange[0] : 1)) * plotW,
+      y: pad.t + plotH - ((series.data[i] - yRange[0]) / (yRange[1] - yRange[0])) * plotH
+    }));
+    polyLine(ctx, pts, series.color, series.lw || 2, series.dash);
+  });
+
+  // 图例
+  if (ySeries.length > 1) {
+    let lx = pad.l + 10;
+    ySeries.forEach(s => {
+      ctx.beginPath(); ctx.moveTo(lx, pad.t - 8); ctx.lineTo(lx + 20, pad.t - 8);
+      ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.stroke();
+      text(ctx, s.label, lx + 24, pad.t - 8, '#8a9ab0', 11, 'left', 'middle');
+      lx += ctx.measureText(s.label).width + 60;
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 2.1: 单线圈 MMF 波形
+   ═══════════════════════════════════════════════════════════ */
+function updateSingleCoil() {
+  const decay = parseFloat(s('s_decay').value);
+  const maxOrder = parseInt(s('s_order').value);
+  const amp = parseFloat(s('s_amp').value);
+  s('v_decay').textContent = decay.toFixed(1) + '×';
+  s('v_order').textContent = maxOrder;
+  s('v_amp').textContent = amp.toFixed(2);
+
+  const N = 256;
+  const xData = Array.from({length: N}, (_, i) => i * 360 / N);
+  const sqData = Array.from({length: N}, (_, i) => {
+    const t = i / N;
+    return (t < 0.5 ? 1 : -1) * amp * 0.9;
+  });
+  const synData = Array.from({length: N}, (_, i) => {
+    const th = i * PI / 180 * 2;
+    let sum = 0;
+    for (let nu = 1; nu <= maxOrder; nu += 2) sum += (4 / (nu * PI)) * Math.cos(nu * th) / Math.pow(nu, decay - 1);
+    return sum * amp;
+  });
+  const baseData = Array.from({length: N}, (_, i) => {
+    const th = i * PI / 180 * 2;
+    return (4 / PI) * Math.cos(th) * amp;
+  });
+
+  drawXYChart('c_single', xData,
+    [
+      { label: '方波', data: sqData, color: '#ff4070', lw: 1.5 },
+      { label: '合成', data: synData, color: '#50e880', lw: 2.5 },
+      { label: '基波', data: baseData, color: 'rgba(100,180,255,0.5)', lw: 1.5, dash: [4,4] }
+    ],
+    [0, 360], [-1.5, 1.5], '机械角度 θ (°)', 'MMF (归一化)', 6, 6
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 2.2: 三相合成 — 极坐标
+   ═══════════════════════════════════════════════════════════ */
+let tAngle3 = 0;
+let anim3 = null;
+
+function drawPolar(canvasId, nu, t) {
+  const { ctx, w, h } = setupCanvas(canvasId);
+  const cx = w / 2, cy = h / 2;
+  const R = Math.min(w, h) * 0.38;
+  clear(ctx, w, h);
+
+  const N = 360;
+  const A = Array.from({length: N}, (_, i) => {
+    const th = i * PI / 180;
+    return Math.cos(nu * th) * Math.cos(t);
+  });
+  const B = Array.from({length: N}, (_, i) => {
+    const th = i * PI / 180 - 2*PI/3;
+    return Math.cos(nu * th) * Math.cos(t - 2*PI/3);
+  });
+  const C = Array.from({length: N}, (_, i) => {
+    const th = i * PI / 180 - 4*PI/3;
+    return Math.cos(nu * th) * Math.cos(t - 4*PI/3);
+  });
+  const Total = A.map((v, i) => (v + B[i] + C[i]) * (nu === 1 ? 1 : 0.5));
+
+  const colors = ['#ff4040', '#40c040', '#4040ff', '#ffb840'];
+  [A, B, C, Total].forEach((data, ci) => {
+    const pts = data.map((v, i) => {
+      const th = i * PI / 180;
+      const r = R * (0.3 + 0.7 * (v * 0.5 + 0.5));
+      return { x: cx + r * Math.cos(th - PI/2), y: cy + r * Math.sin(th - PI/2) };
+    });
+    polyLine(ctx, pts, colors[ci], ci === 3 ? 2.5 : 1.8);
+  });
+
+  // 标注
+  const labels = ['A相', 'B相', 'C相', '合成'];
+  const angles = [0, 2*PI/3, 4*PI/3, 0];
+  labels.forEach((lb, ci) => {
+    const ang = angles[ci];
+    const r = R * 1.12;
+    const px = cx + r * Math.cos(ang - PI/2);
+    const py = cy + r * Math.sin(ang - PI/2);
+    text(ctx, lb, px, py, colors[ci], 11);
+  });
+
+  // 共振轴（基波旋转方向）
+  if (nu === 1) {
+    const arrowAng = -t - PI/2;
+    const ax = cx + R * 1.05 * Math.cos(arrowAng);
+    const ay = cy + R * 1.05 * Math.sin(arrowAng);
+    ctx.save();
+    ctx.translate(ax, ay);
+    ctx.rotate(arrowAng + PI/2);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(8, 0); ctx.lineTo(0, 5); ctx.lineTo(-8, 0); ctx.closePath();
+    ctx.fillStyle = '#64b4ff'; ctx.fill();
+    ctx.restore();
+    text(ctx, '旋转方向', cx + R * 0.15, cy - R * 0.85, '#64b4ff', 10);
+  }
+
+  text(ctx, `ν=${nu} | t=${Math.round(t*180/PI)}°`, w/2, h - 12, '#5a6a8a', 11);
+}
+
+function update3Phase() {
+  const nu = parseInt(s('sel_harm').value);
+  const speed = parseFloat(s('s_speed').value);
+  s('v_t').textContent = Math.round(tAngle3 * 180 / PI);
+  s('v_speed').textContent = speed + '×';
+  s('s_t').value = tAngle3 * 180 / PI;
+  drawPolar('c_3phase', nu, tAngle3);
+}
+
+function startAnim3() {
+  if (anim3) clearInterval(anim3);
+  const speed = parseFloat(s('s_speed').value);
+  anim3 = setInterval(() => {
+    tAngle3 = (tAngle3 + speed * 0.06) % TAU;
+    const nu = parseInt(s('sel_harm').value);
+    s('v_t').textContent = Math.round(tAngle3 * 180 / PI);
+    drawPolar('c_3phase', nu, tAngle3);
+  }, 40);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 2.3: 绕组因数
+   ═══════════════════════════════════════════════════════════ */
+function updateWf() {
+  const q = parseInt(s('s_q').value);
+  const yRatio = parseFloat(s('s_y').value);
+  s('v_q').textContent = q;
+  s('v_y').textContent = yRatio.toFixed(2);
+
+  const orders = [1,5,7,11,13,17,19,23,25];
+  const alpha = PI / (q * 3);
+  const beta = (1 - yRatio) * PI;
+  const kd = orders.map(nu => Math.abs(Math.sin(nu*q*alpha/2) / (q*Math.sin(nu*alpha/2))));
+  const kp = orders.map(nu => Math.abs(Math.cos(nu*beta/2)));
+  const kw = kd.map((v, i) => v * kp[i]);
+
+  const { ctx, w, h } = setupCanvas('c_wf');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/orders.length, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '谐波阶次 ν', '因数值', 0, 5);
+
+  const bw = pw / orders.length * 0.7;
+  orders.forEach((nu, i) => {
+    const x0 = pad.l + (i + 0.15) * pw / orders.length;
+    const baseY = pad.t + ph;
+    bar(ctx, x0, baseY, bw * 0.3, kd[i] * ph, 'rgba(100,180,255,0.7)', 'rgba(100,180,255,0.8)');
+    bar(ctx, x0 + bw * 0.35, baseY, bw * 0.3, kp[i] * ph, 'rgba(255,144,64,0.7)', 'rgba(255,144,64,0.8)');
+    bar(ctx, x0 + bw * 0.7, baseY, bw * 0.3, kw[i] * ph, 'rgba(80,232,128,0.7)', 'rgba(80,232,128,0.9)');
+    text(ctx, nu === 1 ? 'ν=1\n基波' : nu, pad.l + (i+0.5)*pw/orders.length, pad.t+ph+14, '#6a7a9a', 10);
+  });
+
+  // Y刻度
+  for (let i = 0; i <= 5; i++) {
+    textRight(ctx, (i/5).toFixed(1), pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+  }
+  // 图例
+  [['k_dν','#64b4ff'],['k_pν','#ff9040'],['k_wν','#50e880']].forEach(([lb, col], i) => {
+    const lx = pad.l + i * 90 + 10;
+    ctx.fillStyle = col; ctx.fillRect(lx, pad.t - 14, 18, 8);
+    text(ctx, lb, lx + 22, pad.t - 10, '#8a9ab0', 11, 'left', 'middle');
+  });
+
+  // 标注5次消谐点
+  if (yRatio < 1) {
+    const idx5 = orders.indexOf(5);
+    if (idx5 >= 0 && kp[idx5] < 0.05) {
+      const x0 = pad.l + (idx5 + 0.5) * pw / orders.length;
+      text(ctx, '✓ 5次≈0', x0, pad.t + 10, '#50e880', 10);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 2.4: FSCW 次谐波
+   ═══════════════════════════════════════════════════════════ */
+function windingFuncMMF(Q, p, m) {
+  const results = [];
+  const maxOrder = p + 12;
+  const gcdQP = gcd(Q, 2 * p);
+  const unitPole = (2 * p) / gcdQP;
+  const yRatio = 0.8; // 典型4/5短距
+  const alpha = TAU / Q;
+
+  for (let nu = 1; nu <= maxOrder; nu++) {
+    const isSub = nu < p && nu % unitPole === 0;
+    const isBase = nu === p;
+    const q_actual = Q / (2 * p * m);
+    const kd = q_actual >= 1
+      ? Math.abs(Math.sin(nu * q_actual * alpha * m / 2) / (q_actual * Math.sin(nu * alpha * m / 2)))
+      : 1;
+    const kp = Math.abs(Math.cos(nu * (1 - yRatio) * PI));
+    const kw = kd * kp;
+    const base = 100 / nu;
+    const subBonus = isSub ? 1.6 : 1;
+    const amp = Math.min(kw * base * subBonus, 110);
+    results.push({ nu, amp, isSub, isBase });
+  }
+  return results;
+}
+
+function updateFscw() {
+  const Q = parseInt(s('sel_Q').value);
+  const p = parseInt(s('sel_poles').value) / 2;
+  const data = windingFuncMMF(Q, p, 3);
+
+  const { ctx, w, h } = setupCanvas('c_fscw');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/data.length, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, 'MMF谐波阶次 ν', '% (相对基波)', 0, 5);
+
+  const baseAmp = data.find(d => d.isBase)?.amp || 100;
+  const bw = pw / data.length * 0.65;
+  data.forEach((d, i) => {
+    const bh = (d.amp / 110) * ph;
+    const x0 = pad.l + (i + 0.2) * pw / data.length;
+    const color = d.isSub ? '#ff6060' : d.isBase ? '#64b4ff' : '#a080ff';
+    bar(ctx, x0, pad.t + ph, bw, bh, color + 'bb');
+    if (d.isSub) text(ctx, '次', x0+bw/2, pad.t + ph - bh - 10, '#ff6060', 9);
+    if (i % 2 === 0) text(ctx, 'ν='+d.nu, pad.l+(i+0.5)*pw/data.length, pad.t+ph+14, '#6a7a9a', 10);
+  });
+
+  // 相对基波标注线
+  const baseY = pad.t + ph - (baseAmp/110)*ph;
+  ctx.strokeStyle = '#64b4ff'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pad.l, baseY); ctx.lineTo(pad.l+pw, baseY); ctx.stroke();
+  ctx.setLineDash([]);
+  textRight(ctx, '基波 100%', pad.l - 6, baseY, '#64b4ff', 10);
+
+  for (let i = 0; i <= 5; i++) textRight(ctx, Math.round(110*i/5)+'%', pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+
+  // 结论
+  const subs = data.filter(d => d.isSub);
+  const txt = subs.length
+    ? `<strong>${Q}槽${p*2}极</strong>（q=${(Q/(p*2)).toFixed(2)}，分数）存在 ${subs.length} 个<strong style="color:#ff6060">次谐波</strong>：`
+    + subs.map(d => ` ν=${d.nu}（${(d.amp/baseAmp*100).toFixed(0)}%）`).join('、')
+    + `<br>绕组因数接近1，衰减极慢 → 穿入转子轭 → <strong>转子必须叠片</strong>`
+    : `<strong>${Q}槽${p*2}极</strong>（q=${(Q/(p*2)).toFixed(2)}，整数槽）<strong style="color:#50e880">无次谐波问题</strong>`;
+  s('c_fscw_txt').innerHTML = txt;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 3.1: 磁导分布
+   ═══════════════════════════════════════════════════════════ */
+function updatePerm() {
+  const Q = parseInt(s('s_Q3').value);
+  const bs = parseFloat(s('s_bs').value);
+  const delta = parseFloat(s('s_delta').value);
+  s('v_Q3').textContent = Q;
+  s('v_bs').textContent = bs.toFixed(2);
+  s('v_delta').textContent = delta.toFixed(1);
+
+  const N = 256;
+  const tau_s = TAU / Q;
+  const slotW = tau_s * bs;
+  const xData = Array.from({length: N}, (_, i) => i * 360 / N);
+  const Lambda = Array.from({length: N}, (_, i) => {
+    const th = i * TAU / N;
+    const local = th % tau_s;
+    const inSlot = local < slotW;
+    if (!inSlot) return 1;
+    const depth = local / slotW;
+    return 1 - 0.45 * depth * (1 + 0.5 / delta);
+  });
+
+  drawXYChart('c_perm', xData,
+    [{ label: 'Λ(θ)', data: Lambda, color: '#64b4ff', lw: 2.5 }],
+    [0, 360], [0.4, 1.05], '机械角度 θ (°)', '归一化磁导 Λ', 6, 5
+  );
+
+  const { ctx: ctxP, w: wP } = setupCanvas('c_perm');
+  const kc = 1 + bs / (5 * (1 + bs / delta));
+  text(ctxP, `Carter系数 k_c ≈ ${kc.toFixed(3)}  |  槽越宽 → k_c 越大 → 等效气隙越大`, wP/2, 10, '#a0d0ff', 11, 'center', 'top');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 3.2: 磁导 FFT
+   ═══════════════════════════════════════════════════════════ */
+function updatePermFft() {
+  const bs = parseFloat(s('s_bs').value);
+  const kmax = parseInt(s('s_kmax').value);
+  const type = s('sel_type').value;
+  s('v_kmax').textContent = kmax;
+
+  const reduction = type === 'closed' ? 0.05 : type === 'semi' ? 0.35 : 1;
+  const fftData = Array.from({length: kmax}, (_, k) => {
+    const kk = k + 1;
+    return (1 / (kk * PI)) * Math.abs(Math.sin(kk * PI * (1 - bs))) * reduction;
+  });
+  const labels = Array.from({length: kmax}, (_, k) => k + 1);
+
+  const { ctx, w, h } = setupCanvas('c_perm_fft');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/kmax, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '谐波阶次 k', 'Λ_k 幅值', 0, 5);
+
+  const bw = pw / kmax * 0.65;
+  labels.forEach((lv, i) => {
+    const bh = fftData[i] * ph * 4;
+    const x0 = pad.l + (i + 0.2) * pw / kmax;
+    bar(ctx, x0, pad.t + ph, bw, Math.max(bh, 1), `rgba(100,180,255,${0.5 + fftData[i]*2})`, '#64b4ff');
+    text(ctx, 'k='+lv, pad.l+(i+0.5)*pw/kmax, pad.t+ph+14, '#6a7a9a', 10);
+  });
+  for (let i = 0; i <= 5; i++) textRight(ctx, (i/20).toFixed(2), pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 3.3: 卷积混叠
+   ═══════════════════════════════════════════════════════════ */
+function updateConv() {
+  const Q = parseInt(s('s_Qc').value);
+  const p = parseInt(s('s_p').value);
+  s('v_Qc').textContent = Q;
+  s('v_p').textContent = p;
+
+  const nu_list = [1, 5, 7];
+  const k_list = [-2, -1, 0, 1, 2];
+  let combos = [];
+  nu_list.forEach(nu => {
+    k_list.forEach(k => {
+      const nup = nu * p + k * Q;
+      if (nup > 0 && nup <= 60) {
+        const amp = Math.min((1/nu) * (1/Math.abs(k+0.5)) * (p/nup) * 30, 70);
+        combos.push({ nup, amp, nu });
+      }
+    });
+  });
+  combos.sort((a, b) => a.nup - b.nup);
+
+  const { ctx, w, h } = setupCanvas('c_conv');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/Math.min(combos.length,10), ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '齿谐波阶次 ν\' = νp ± kQ', '% (相对基波)', Math.min(combos.length,10), 5);
+
+  const bw = pw / combos.length * 0.65;
+  combos.forEach((c, i) => {
+    const bh = (c.amp / 70) * ph;
+    const color = c.nu === p - Q || c.nup === p + Q ? '#ff6060' : c.nu === 1 ? '#64b4ff' : '#ff9040';
+    bar(ctx, pad.l+(i+0.2)*pw/combos.length, pad.t+ph, bw, bh, color+'cc');
+    if (i % 2 === 0) text(ctx, c.nup > 0 ? '+'+c.nup : c.nup, pad.l+(i+0.5)*pw/combos.length, pad.t+ph+14, '#6a7a9a', 10);
+  });
+  for (let i = 0; i <= 5; i++) textRight(ctx, Math.round(70*i/5)+'%', pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+
+  s('c_conv_txt').innerHTML =
+    `基波 ν=1 与 k=±1 交叉 → 产生 <strong>${p-Q}</strong> 和 <strong>${p+Q}</strong> 次齿谐波<br>
+    齿谐波幅值 ≈ (1/ν)(1/k)(p/ν')，Q↑ 或 k↑ → 幅值↓<br>
+    k=0 项（纯 ν·p 谐波）：${nu_list.map(nu => `${nu*p}次`).join('、')}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 4.1: 力波生成
+   ═══════════════════════════════════════════════════════════ */
+function updateForce() {
+  const v1 = parseInt(s('s_v1').value);
+  const v2 = parseInt(s('s_v2').value);
+  const t = parseFloat(s('s_t4').value) * PI / 180;
+  s('v_v1').textContent = v1;
+  s('v_v2').textContent = v2;
+  s('v_t4').textContent = Math.round(t*180/PI);
+
+  const N = 300;
+  const xData = Array.from({length: N}, (_, i) => i * 360 / N);
+  const B1sq = Array.from({length: N}, (_, i) => { const th = i * TAU / N; const b = Math.cos(v1*th - t); return b*b*0.5; });
+  const B2sq = Array.from({length: N}, (_, i) => { const th = i * TAU / N; const b = Math.cos(v2*th - t)*0.4; return b*b*0.5; });
+  const cross = Array.from({length: N}, (_, i) => { const th = i * TAU / N; return Math.cos(v1*th-t)*Math.cos(v2*th-t)*0.4; });
+  const total = B1sq.map((v,i) => v + B2sq[i] + cross[i]);
+
+  drawXYChart('c_force', xData,
+    [
+      { label: 'B₁²', data: B1sq, color: '#64b4ff', lw: 1.5 },
+      { label: 'B₂²', data: B2sq, color: '#ff9040', lw: 1.5 },
+      { label: '交叉', data: cross, color: '#50e880', lw: 2 },
+      { label: '合成', data: total, color: '#ff4070', lw: 2.5 }
+    ],
+    [0, 360], [-0.6, 1.2], '角度 θ (°)', '力密度 (归一化)', 6, 5
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 4.2: 斜槽因数
+   ═══════════════════════════════════════════════════════════ */
+function updateSkew() {
+  const alpha = parseFloat(s('s_skew').value);
+  s('v_skew').textContent = alpha.toFixed(1);
+
+  const orders = [1,3,5,6,7,9,11,12,13,15,17,18];
+  const kskew = orders.map(r => {
+    const arg = r * alpha * PI;
+    return Math.abs(arg < 0.001 ? 1 : Math.sin(arg) / arg);
+  });
+
+  const { ctx, w, h } = setupCanvas('c_skew');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/orders.length, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '力波阶次 r', 'k_{skew,r}', 0, 5);
+
+  const bw = pw / orders.length * 0.65;
+  const specials = [6, 12];
+  orders.forEach((r, i) => {
+    const bh = kskew[i] * ph;
+    const isSpec = specials.includes(r);
+    const color = isSpec ? '#ff6060' : r >= 11 ? '#a080ff' : '#64b4ff';
+    bar(ctx, pad.l+(i+0.2)*pw/orders.length, pad.t+ph, bw, Math.max(bh, 1), color+'cc');
+    if (isSpec) text(ctx, '★', pad.l+(i+0.5)*pw/orders.length, pad.t+ph-bh-10, '#ff6060', 11);
+    text(ctx, r+(r===6||r===12?'\n(N_cog)':''), pad.l+(i+0.5)*pw/orders.length, pad.t+ph+14, '#6a7a9a', 10);
+  });
+  for (let i = 0; i <= 5; i++) textRight(ctx, (i/5).toFixed(1), pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 4.3: LCM
+   ═══════════════════════════════════════════════════════════ */
+function updateLcm() {
+  const combos = [[12,8],[12,10],[12,14],[18,16],[24,20],[24,22],[36,30],[36,42]];
+  const ncogs = combos.map(([Q,p2]) => lcm(Q,p2)/(p2/2));
+  const labels = combos.map(([Q,p2]) => `${Q}槽${p2}极`);
+
+  const { ctx, w, h } = setupCanvas('c_lcm');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/combos.length, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '槽极配合', 'N_{cog}', 0, 5);
+
+  const bw = pw / combos.length * 0.6;
+  labels.forEach((lb, i) => {
+    const bh = (ncogs[i] / 30) * ph;
+    const col = ncogs[i] >= 15 ? '#50e880' : ncogs[i] >= 10 ? '#ffb040' : '#ff5050';
+    bar(ctx, pad.l+(i+0.2)*pw/combos.length, pad.t+ph, bw, Math.max(bh,1), col+'cc', col);
+    text(ctx, ncogs[i].toFixed(0), pad.l+(i+0.5)*pw/combos.length, pad.t+ph-bh-10, col, 11);
+    text(ctx, lb, pad.l+(i+0.5)*pw/combos.length, pad.t+ph+14, '#7a8aaa', 9);
+  });
+  for (let i = 0; i <= 5; i++) textRight(ctx, Math.round(30*i/5), pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+
+  // 表格
+  let html = '';
+  combos.forEach(([Q,p2],i) => {
+    const l = lcm(Q,p2), n = ncogs[i];
+    const ev = n>=15?'✅ 优良':n>=10?'⚠️ 良好':'❌ 一般';
+    html += `<tr><td>${Q}槽${p2}极</td><td class="num">${l}</td><td class="num">${n.toFixed(0)}</td><td>${ev}</td></tr>`;
+  });
+  s('tbl_lcm').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图 4.4: 定子模态振动
+   ═══════════════════════════════════════════════════════════ */
+function updateMode() {
+  const m = parseInt(s('s_m').value);
+  const freq = parseFloat(s('s_f').value);
+  s('v_m').textContent = m;
+  s('v_f').textContent = Math.round(freq);
+
+  const zeta = 0.02;
+  const f_res = 800 + m * 400;
+  const freqs = Array.from({length: 200}, (_, i) => 200 + i * 24);
+  const H = freqs.map(f => {
+    const rat = f / f_res;
+    return 1 / Math.sqrt(Math.pow(1-rat*rat,2) + Math.pow(2*zeta*rat,2));
+  });
+
+  // 放大系数曲线
+  const { ctx, w, h } = setupCanvas('c_mode');
+  const pad = {l:52, r:20, t:30, b:44};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  clear(ctx, w, h);
+  grid(ctx, pad.l, pad.t, pw, ph, pw/8, ph/5);
+  axes(ctx, pad.l, pad.t+ph, pw, ph, '激励频率 f (Hz)', '动态放大系数 H', 8, 5);
+
+  for (let i = 0; i <= 5; i++) textRight(ctx, (60*i/5).toFixed(0)+'×', pad.l-6, pad.t+ph-i*ph/5, '#6a7a9a', 10);
+  for (let i = 0; i <= 8; i++) text(ctx, Math.round(200+i*600), pad.l+i*pw/8, pad.t+ph+14, '#6a7a9a', 10);
+
+  // 曲线
+  const pts = freqs.map((f, i) => ({
+    x: pad.l + ((f-200)/(5000-200))*pw,
+    y: pad.t + ph - (H[i]/60)*ph
+  }));
+  polyLine(ctx, pts, '#64b4ff', 2.5);
+
+  // 共振峰
+  const peakX = pad.l + ((f_res-200)/(5000-200))*pw;
+  const peakY = pad.t + ph - (1/(2*zeta))*ph/60;
+  ctx.strokeStyle = 'rgba(255,64,112,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(peakX, pad.t+ph); ctx.lineTo(peakX, pad.t); ctx.stroke();
+  ctx.setLineDash([]);
+  circle(ctx, peakX, peakY, 5, '#ff4070');
+  text(ctx, '共振峰', peakX, pad.t+10, '#ff4070', 10);
+  text(ctx, `f_r≈${f_res}Hz`, peakX, pad.t+22, '#7a8aaa', 10);
+
+  // 当前激励点
+  const curX = pad.l + ((freq-200)/(5000-200))*pw;
+  const curH = 1/Math.sqrt(Math.pow(1-Math.pow(freq/f_res,2),2)+Math.pow(2*zeta*freq/f_res,2));
+  const curY = pad.t + ph - (curH/60)*ph;
+  circle(ctx, curX, curY, 6, '#ffb840', '#ffb840', 2);
+  text(ctx, `f=${Math.round(freq)}Hz H≈${curH.toFixed(1)}×`, curX, curY - 16, '#ffb840', 11);
+
+  const names = ['呼吸','平移','椭圆','三叶','四叶','五叶','六叶'];
+  const danger = Math.abs(freq - f_res) < f_res * 0.12;
+  s('c_mode_txt').innerHTML =
+    `<strong>${m}阶模态（${names[m]}）</strong> | f<sub>r</sub>≈${f_res}Hz | ` +
+    `f=${Math.round(freq)}Hz → <strong style="color:${danger?'#ff6060':'#50e880'}">${danger?'⚠️ 共振风险！':'✅ 安全'}</strong> | H≈${curH.toFixed(1)}×`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   辅助 & 绑定事件
+   ═══════════════════════════════════════════════════════════ */
+const s = id => document.getElementById(id);
+
+function scrollTo(id) {
+  s(id).scrollIntoView({behavior:'smooth',block:'start'});
+  document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// 绑定所有控件
+function bind(id, evt, fn, valFn) {
+  s(id).addEventListener(evt, () => { fn(); if(valFn) valFn(); });
+}
+
+// 图2.1
+['s_amp','s_decay','s_order'].forEach(id => bind(id, 'input', updateSingleCoil));
+// 图2.2
+s('s_t').addEventListener('input', () => { tAngle3 = parseFloat(s('s_t').value) * PI / 180; update3Phase(); });
+s('s_speed').addEventListener('input', () => { s('v_speed').textContent = s('s_speed').value + '×'; startAnim3(); });
+s('sel_harm').addEventListener('change', update3Phase);
+startAnim3();
+// 图2.3
+['s_q','s_y'].forEach(id => bind(id, 'input', updateWf));
+// 图2.4
+s('sel_Q').addEventListener('change', updateFscw);
+s('sel_poles').addEventListener('change', updateFscw);
+// 图3.1
+['s_Q3','s_bs','s_delta'].forEach(id => bind(id, 'input', updatePerm));
+// 图3.2
+['s_bs','s_kmax','sel_type'].forEach(id => bind(id, 'input', updatePermFft));
+// 图3.3
+['s_Qc','s_p'].forEach(id => bind(id, 'input', updateConv));
+// 图4.1
+['s_v1','s_v2','s_t4'].forEach(id => bind(id, 'input', updateForce));
+// 图4.2
+bind('s_skew', 'input', updateSkew);
+// 图4.3
+updateLcm();
+// 图4.4
+['s_m','s_f'].forEach(id => bind(id, 'input', updateMode));
+
+// 初始化所有图表
+updateSingleCoil();
+update3Phase();
+updateWf();
+updateFscw();
+updatePerm();
+updatePermFft();
+updateConv();
+updateForce();
+updateSkew();
+updateMode();
+
+// 响应式重绘（防抖）
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    updateSingleCoil();
+    updateWf();
+    updateFscw();
+    updatePerm();
+    updatePermFft();
+    updateConv();
+    updateForce();
+    updateSkew();
+    updateMode();
+  }, 150);
+});
+</script>
+</body>
+</html>

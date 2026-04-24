@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "sessions": {
+    "b074c74e8a2749f3a7a4b1792df64197": [
+      {
+        "expertId": "EmbeddedFirmwareEngineer",
+        "name": "固件通",
+        "profession": "嵌入式固件工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/EmbeddedFirmwareEngineer/EmbeddedFirmwareEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/EmbeddedFirmwareEngineer/EmbeddedFirmwareEngineer_zh.md",
+        "usedAt": 1776844079433,
+        "industryId": "all"
+      },
+      {
+        "expertId": "ContentCreator",
+        "name": "文爆爆",
+        "profession": "内容创作专家",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/03-Marketing/ContentCreator/ContentCreator.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/03-Marketing/ContentCreator/ContentCreator_zh.md",
+        "usedAt": 1776838250663,
+        "industryId": "all"
+      }
+    ]
+  },
+  "lastUpdated": 1776850314008
+}

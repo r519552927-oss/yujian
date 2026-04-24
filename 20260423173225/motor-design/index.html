@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMSM 磁路计算工具 v2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #0f3460;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.2em;
+            color: #00d9ff;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 0.95em;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 320px;
+            gap: 25px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+            .diagram-section {
+                grid-column: span 2;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .diagram-section {
+                grid-column: span 1;
+            }
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-title {
+            font-size: 1.2em;
+            color: #00d9ff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #00d9ff;
+            border-radius: 2px;
+        }
+        
+        .param-group {
+            margin-bottom: 20px;
+        }
+        
+        .param-group-title {
+            font-size: 0.85em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .param-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .param-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .param-item.full-width {
+            grid-column: span 2;
+        }
+        
+        label {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        
+        input, select {
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d9ff;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+        
+        input[type="number"] {
+            font-family: 'Consolas', monospace;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+            color: #1a1a2e;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 217, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* 结果展示 */
+        .result-card {
+            background: rgba(0, 217, 255, 0.05);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .result-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            background: rgba(0, 217, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .result-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #00d9ff;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .result-unit {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .result-label {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-top: 8px;
+        }
+        
+        .result-detail {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: #888;
+        }
+        
+        .detail-value {
+            font-family: 'Consolas', monospace;
+            color: #fff;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+        
+        .status-ok {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .status-warn {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+        
+        .status-error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+        }
+        
+        /* 警告和建议 */
+        .alerts {
+            margin-top: 20px;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+        
+        .alert-error {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: #ff5252;
+        }
+        
+        /* 图表区域 */
+        .chart-container {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            position: relative;
+        }
+        
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 160px;
+            padding: 10px 0;
+        }
+        
+        .bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bar {
+            width: 50px;
+            background: linear-gradient(180deg, #00d9ff 0%, #0066cc 100%);
+            border-radius: 5px 5px 0 0;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+        
+        .bar-label {
+            font-size: 0.75em;
+            color: #888;
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            color: #00d9ff;
+            font-weight: bold;
+        }
+        
+        /* 预设方案 */
+        .presets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .preset-btn {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover, .preset-btn.active {
+            background: rgba(0, 217, 255, 0.3);
+            border-color: #00d9ff;
+        }
+        
+        /* ========== 定转子示意图 ========== */
+        .diagram-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .motor-diagram {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .svg-container {
+            width: 100%;
+            aspect-ratio: 1;
+        }
+        
+        .diagram-label {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #888;
+        }
+        
+        .param-display {
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        
+        .param-display-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85em;
+        }
+        
+        .param-display-label {
+            color: #aaa;
+        }
+        
+        .param-display-value {
+            color: #00d9ff;
+            font-family: 'Consolas', monospace;
+        }
+        
+        /* 材料信息面板 */
+        .material-info-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        
+        .material-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.8em;
+        }
+        
+        .material-label {
+            color: #888;
+        }
+        
+        .material-value {
+            color: #fff;
+            font-family: 'Consolas', monospace;
+        }
+        
+        /* 灵敏度分析 */
+        .sensitivity-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .sensitivity-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .sensitivity-value {
+            font-size: 1.2em;
+            color: #00d9ff;
+            font-weight: bold;
+        }
+        
+        .sensitivity-label {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        /* 材料选择器样式 */
+        select optgroup {
+            background: #1a1a2e;
+            color: #00d9ff;
+        }
+        
+        select option {
+            background: #16213e;
+            color: #fff;
+        }
+        
+        /* 打印样式 */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .card {
+                background: white;
+                border: 1px solid #ccc;
+            }
+            .btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ PMSM 磁路计算工具 v2.0</h1>
+            <p class="subtitle">永磁同步电机设计与分析 | Motor Magnetic Circuit Calculator</p>
+        </header>
+        
+        <div class="main-layout">
+            <!-- 左侧: 参数输入 -->
+            <div class="card">
+                <h2 class="card-title">电机参数输入</h2>
+                
+                <!-- 预设方案 -->
+                <div class="presets">
+                    <button class="preset-btn active" onclick="loadPreset('standard')">标准 1.5kW</button>
+                    <button class="preset-btn" onclick="loadPreset('small')">小功率 750W</button>
+                    <button class="preset-btn" onclick="loadPreset('large')">大功率 3kW</button>
+                    <button class="preset-btn" onclick="loadPreset('servo')">伺服 200W</button>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-group-title">额定参数</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>额定功率 (W)</label>
+                            <input type="number" id="rated_power" value="1500" step="100">
+                        </div>
+                        <div class="param-item">
+                            <label>额定转速 (rpm)</label>
+                            <input type="number" id="rated_speed" value="3000" step="100">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>极数</label>
+                            <select id="poles">
+                                <option value="4">4极</option>
+                                <option value="6">6极</option>
+                                <option value="8" selected>8极</option>
+                                <option value="10">10极</option>
+                                <option value="12">12极</option>
+                            </select>
+                        </div>
+                        <div class="param-item">
+                            <label>相数</label>
+                            <select id="phases">
+                                <option value="3" selected>3相</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-group-title">定子尺寸 (mm)</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>定子外径 D_out</label>
+                            <input type="number" id="D_out" value="90" step="1">
+                        </div>
+                        <div class="param-item">
+                            <label>定子内径 D_in</label>
+                            <input type="number" id="D_in" value="58" step="1">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>铁心长度 L_a</label>
+                            <input type="number" id="L_a" value="65" step="1">
+                        </div>
+                        <div class="param-item">
+                            <label>槽数 Q_s</label>
+                            <input type="number" id="Q_s" value="36" step="6">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-group-title">槽型尺寸 (mm)</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>齿高 h_t</label>
+                            <input type="number" id="h_t" value="12" step="0.5">
+                        </div>
+                        <div class="param-item">
+                            <label>齿宽 b_t</label>
+                            <input type="number" id="b_t" value="5" step="0.5">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>轭高 h_j</label>
+                            <input type="number" id="h_j" value="6" step="0.5">
+                        </div>
+                        <div class="param-item">
+                            <label>槽宽 b_s</label>
+                            <input type="number" id="b_s" value="3.5" step="0.5">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>槽高 h_s</label>
+                            <input type="number" id="h_s" value="14" step="0.5">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-group-title">气隙与永磁体</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>单边气隙 δ (mm)</label>
+                            <input type="number" id="delta" value="0.5" step="0.05">
+                        </div>
+                        <div class="param-item">
+                            <label>极弧系数 α_p</label>
+                            <input type="number" id="alpha_p" value="0.9" step="0.05" min="0.5" max="1">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item full-width">
+                            <label>永磁体材料</label>
+                            <select id="pm_material">
+                                <option value="N35">N35 (Br=1.17T, Hcb=800kA/m)</option>
+                                <option value="N38">N38 (Br=1.23T, Hcb=860kA/m)</option>
+                                <option value="N40">N40 (Br=1.26T, Hcb=880kA/m)</option>
+                                <option value="N42">N42 (Br=1.30T, Hcb=900kA/m)</option>
+                                <option value="N45">N45 (Br=1.35T, Hcb=920kA/m)</option>
+                                <option value="N48">N48 (Br=1.40T, Hcb=940kA/m)</option>
+                                <option value="N50">N50 (Br=1.43T, Hcb=960kA/m)</option>
+                                <option value="N52" selected>N52 (Br=1.45T, Hcb=1000kA/m)</option>
+                                <option value="N48SH">N48SH (耐高温型, Br=1.38T)</option>
+                                <option value="N42UH">N42UH (超高矫顽力, Hcj=1600kA/m)</option>
+                                <option value="N38EH">N38EH (特高矫顽力, Hcj=2000kA/m)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item full-width">
+                            <label>铁心材料</label>
+                            <select id="core_material">
+                                <option value="35AW300" selected>35AW300 (新能源汽车, B50=1.66T)</option>
+                                <option value="35AW250">35AW250 (高牌号, B50=1.70T)</option>
+                                <option value="35AH300">35AH300 (高频低损, B50=1.65T)</option>
+                                <option value="DW310">DW310 (普通硅钢, B50=1.60T)</option>
+                                <option value="DW360">DW360 (普通硅钢, B50=1.62T)</option>
+                                <option value="DW465">DW465 (高牌号, B50=1.65T)</option>
+                                <option value="B20ATV1500">B20ATV1500 (取向硅钢, B50=1.85T)</option>
+                                <option value="35CM210">35CM210 (取向硅钢, B50=1.88T)</option>
+                                <option value="M19SG">M19SG (美军标, B50=1.90T)</option>
+                                <option value="35HX">35HX (非晶合金, B50=1.56T)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>永磁体厚度 h_m (mm)</label>
+                            <input type="number" id="h_m" value="3" step="0.5">
+                        </div>
+                        <div class="param-item">
+                            <label>永磁体宽度 b_m (mm)</label>
+                            <input type="number" id="b_m" value="8" step="0.5">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-group-title">工艺系数</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>叠压系数 k_Fe</label>
+                            <input type="number" id="k_Fe" value="0.95" step="0.01">
+                        </div>
+                        <div class="param-item">
+                            <label>卡氏系数 k_c</label>
+                            <input type="number" id="k_c" value="1.15" step="0.01">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>漏磁系数 σ</label>
+                            <input type="number" id="sigma" value="1.08" step="0.01">
+                        </div>
+                        <div class="param-item">
+                            <label>绕组系数 k_w</label>
+                            <input type="number" id="winding_factor" value="0.933" step="0.01">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label>每相串联匝数 N_ph</label>
+                            <input type="number" id="N_ph" value="50" step="5">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="calculate()">
+                        🔄 计算
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetParams()">
+                        ↺ 重置
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        🖨️ 打印
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 中间: 计算结果 -->
+            <div class="card result-card">
+                <h2 class="card-title">计算结果</h2>
+                
+                <div id="resultContent">
+                    <p style="color: #666; text-align: center; padding: 50px;">
+                        点击「计算」按钮查看结果
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 右侧: 定转子示意图 -->
+            <div class="card diagram-section">
+                <h2 class="card-title">电机结构示意</h2>
+                
+                <div class="motor-diagram">
+                    <svg class="svg-container" viewBox="0 0 300 300" id="motorSvg">
+                        <!-- 外圈 (定子外径) -->
+                        <circle cx="150" cy="150" r="140" fill="none" stroke="#444" stroke-width="2"/>
+                        
+                        <!-- 定子铁心 (带槽) -->
+                        <circle cx="150" cy="150" r="120" fill="#2a2a4a" stroke="#00d9ff" stroke-width="2"/>
+                        
+                        <!-- 定子槽 -->
+                        <g id="statorSlots" stroke="#1a1a2e" stroke-width="1">
+                            <!-- 槽将由JS动态生成 -->
+                        </g>
+                        
+                        <!-- 气隙圆 -->
+                        <circle cx="150" cy="150" r="90" fill="none" stroke="#00d9ff" stroke-width="2" stroke-dasharray="5,3"/>
+                        
+                        <!-- 转子 -->
+                        <circle cx="150" cy="150" r="80" fill="#3a3a5a" stroke="#ff9800" stroke-width="2"/>
+                        
+                        <!-- 永磁体 -->
+                        <g id="pmMagnets">
+                            <!-- 永磁体将由JS动态生成 -->
+                        </g>
+                        
+                        <!-- 转轴 -->
+                        <circle cx="150" cy="150" r="15" fill="#666" stroke="#888" stroke-width="2"/>
+                        <circle cx="150" cy="150" r="5" fill="#333"/>
+                        
+                        <!-- 标注 -->
+                        <g font-size="10" fill="#888">
+                            <text x="150" y="18" text-anchor="middle">D_out</text>
+                            <line x1="150" y1="20" x2="150" y2="30" stroke="#888"/>
+                            <text x="150" y="42" text-anchor="middle" id="dimDout">90mm</text>
+                            
+                            <text x="150" y="245" text-anchor="middle">D_in</text>
+                            <text x="150" y="258" text-anchor="middle" id="dimDin">58mm</text>
+                            
+                            <text x="10" y="155" dominant-baseline="middle">δ</text>
+                            <text x="25" y="155" dominant-baseline="middle" id="dimDelta">0.5mm</text>
+                            
+                            <text x="150" y="100" text-anchor="middle" fill="#ff9800">h_m</text>
+                            <text x="150" y="113" text-anchor="middle" id="dimHm">3mm</text>
+                        </g>
+                        
+                        <!-- 磁密分布标注 -->
+                        <g id="fluxDensityLegend" font-size="9">
+                            <rect x="220" y="200" width="70" height="80" fill="rgba(0,0,0,0.5)" rx="5"/>
+                            <text x="255" y="218" text-anchor="middle" fill="#00d9ff">磁密 (T)</text>
+                            <rect x="228" y="225" width="12" height="12" fill="#ff5252"/>
+                            <text x="245" y="235" fill="#fff">>1.6</text>
+                            <rect x="228" y="242" width="12" height="12" fill="#00d9ff"/>
+                            <text x="245" y="252" fill="#fff">0.8~1.2</text>
+                            <rect x="228" y="259" width="12" height="12" fill="#00ff88"/>
+                            <text x="245" y="269" fill="#fff"><0.8</text>
+                        </g>
+                    </svg>
+                    
+                    <div class="diagram-label">
+                        <span style="color:#00d9ff">■</span> 定子铁心 &nbsp;
+                        <span style="color:#ff9800">■</span> 转子 &nbsp;
+                        <span style="color:#ff5252">■</span> 永磁体
+                    </div>
+                </div>
+                
+                <div class="param-display" id="diagramParams">
+                    <div class="param-display-row">
+                        <span class="param-display-label">极数</span>
+                        <span class="param-display-value" id="dispPoles">8极</span>
+                    </div>
+                    <div class="param-display-row">
+                        <span class="param-display-label">槽数</span>
+                        <span class="param-display-value" id="dispSlots">36槽</span>
+                    </div>
+                    <div class="param-display-row">
+                        <span class="param-display-label">极距</span>
+                        <span class="param-display-value" id="dispTauP">-</span>
+                    </div>
+                    <div class="param-display-row">
+                        <span class="param-display-label">q值</span>
+                        <span class="param-display-value" id="dispQ">-</span>
+                    </div>
+                </div>
+                
+                <div class="material-info-panel">
+                    <div style="color:#888;font-size:0.85em;margin-bottom:8px;">材料信息</div>
+                    <div class="material-row">
+                        <span class="material-label">永磁体</span>
+                        <span class="material-value" id="dispPmMat">N52</span>
+                    </div>
+                    <div class="material-row">
+                        <span class="material-label">剩余磁密 Br</span>
+                        <span class="material-value" id="dispBr">1.45T</span>
+                    </div>
+                    <div class="material-row">
+                        <span class="material-label">矫顽力 Hcb</span>
+                        <span class="material-value" id="dispHcb">1000kA/m</span>
+                    </div>
+                    <div class="material-row">
+                        <span class="material-label">铁心材料</span>
+                        <span class="material-value" id="dispCoreMat">35AW300</span>
+                    </div>
+                </div>
+                
+                <div class="sensitivity-grid">
+                    <div class="sensitivity-item">
+                        <div class="sensitivity-value" id="sens_delta">-</div>
+                        <div class="sensitivity-label">气隙±0.1mm</div>
+                    </div>
+                    <div class="sensitivity-item">
+                        <div class="sensitivity-value" id="sens_hm">-</div>
+                        <div class="sensitivity-label">h_m±1mm</div>
+                    </div>
+                    <div class="sensitivity-item">
+                        <div class="sensitivity-value" id="sens_alpha">-</div>
+                        <div class="sensitivity-label">极弧±0.05</div>
+                    </div>
+                    <div class="sensitivity-item">
+                        <div class="sensitivity-value" id="sens_temp">-</div>
+                        <div class="sensitivity-label">80°C影响</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer style="text-align: center; padding: 30px 0; color: #666; font-size: 0.85em;">
+            PMSM 磁路计算工具 v2.0 | 基于《现代永磁电机理论与设计》唐任远 | 材料数据来源：国标GB/T、IEC60401
+        </footer>
+    </div>
+    
+    <script>
+        // ============ 材料数据库 ============
+        
+        // 永磁体材料 (GB/T 13560-2017 钕铁硼)
+        const PM_MATERIALS = {
+            'N35': { name: 'N35', Br: 1.17, Hcb: 800e3, Hcj: 876e3, alpha_B: -0.12, max_temp: 80, desc: '基础牌号' },
+            'N38': { name: 'N38', Br: 1.23, Hcb: 860e3, Hcj: 907e3, alpha_B: -0.12, max_temp: 80, desc: '标准牌号' },
+            'N40': { name: 'N40', Br: 1.26, Hcb: 880e3, Hcj: 923e3, alpha_B: -0.12, max_temp: 80, desc: '中高牌号' },
+            'N42': { name: 'N42', Br: 1.30, Hcb: 900e3, Hcj: 939e3, alpha_B: -0.12, max_temp: 80, desc: '高牌号' },
+            'N45': { name: 'N45', Br: 1.35, Hcb: 920e3, Hcj: 955e3, alpha_B: -0.12, max_temp: 80, desc: '高牌号' },
+            'N48': { name: 'N48', Br: 1.40, Hcb: 940e3, Hcj: 971e3, alpha_B: -0.12, max_temp: 80, desc: '高牌号' },
+            'N50': { name: 'N50', Br: 1.43, Hcb: 960e3, Hcj: 988e3, alpha_B: -0.12, max_temp: 80, desc: '超高牌号' },
+            'N52': { name: 'N52', Br: 1.45, Hcb: 1000e3, Hcj: 1020e3, alpha_B: -0.12, max_temp: 80, desc: '最高牌号' },
+            'N48SH': { name: 'N48SH', Br: 1.38, Hcb: 1000e3, Hcj: 1400e3, alpha_B: -0.11, max_temp: 150, desc: '耐高温SH级' },
+            'N42UH': { name: 'N42UH', Br: 1.30, Hcb: 940e3, Hcj: 1600e3, alpha_B: -0.10, max_temp: 180, desc: '超高矫顽力UH' },
+            'N38EH': { name: 'N38EH', Br: 1.23, Hcb: 900e3, Hcj: 2000e3, alpha_B: -0.10, max_temp: 200, desc: '特高矫顽力EH' }
+        };
+        
+        // 硅钢片材料 (GB/T 25046-2010)
+        const CORE_MATERIALS = {
+            '35AW300': { 
+                name: '35AW300', 
+                B50: 1.66, 
+                P15_50: 2.85,
+                desc: '新能源汽车驱动电机常用',
+                curve: [[0,0],[0.2,80],[0.4,150],[0.6,220],[0.8,320],[1.0,450],
+                        [1.1,580],[1.2,800],[1.3,1150],[1.4,1800],[1.5,3200],[1.6,7000]]
+            },
+            '35AW250': { 
+                name: '35AW250', 
+                B50: 1.70, 
+                P15_50: 2.50,
+                desc: '高牌号低损耗',
+                curve: [[0,0],[0.2,70],[0.4,140],[0.6,200],[0.8,290],[1.0,420],
+                        [1.1,550],[1.2,750],[1.3,1100],[1.4,1700],[1.5,3000],[1.6,6500]]
+            },
+            '35AH300': { 
+                name: '35AH300', 
+                B50: 1.65, 
+                P15_50: 2.70,
+                desc: '高频低损耗合金',
+                curve: [[0,0],[0.2,75],[0.4,145],[0.6,210],[0.8,310],[1.0,440],
+                        [1.1,570],[1.2,790],[1.3,1120],[1.4,1780],[1.5,3150],[1.6,6900]]
+            },
+            'DW310': { 
+                name: 'DW310', 
+                B50: 1.60, 
+                P15_50: 3.10,
+                desc: '普通硅钢片',
+                curve: [[0,0],[0.2,180],[0.4,350],[0.6,520],[0.8,700],[1.0,950],
+                        [1.1,1200],[1.2,1600],[1.3,2200],[1.4,3200],[1.5,5000],[1.6,9000]]
+            },
+            'DW360': { 
+                name: 'DW360', 
+                B50: 1.62, 
+                P15_50: 3.60,
+                desc: '普通硅钢片',
+                curve: [[0,0],[0.2,160],[0.4,320],[0.6,480],[0.8,650],[1.0,880],
+                        [1.1,1100],[1.2,1500],[1.3,2000],[1.4,3000],[1.5,4800],[1.6,8500]]
+            },
+            'DW465': { 
+                name: 'DW465', 
+                B50: 1.65, 
+                P15_50: 4.65,
+                desc: '高牌号硅钢',
+                curve: [[0,0],[0.2,120],[0.4,240],[0.6,380],[0.8,520],[1.0,700],
+                        [1.1,880],[1.2,1150],[1.3,1600],[1.4,2500],[1.5,4500],[1.6,10000]]
+            },
+            'B20ATV1500': { 
+                name: 'B20ATV1500', 
+                B50: 1.85, 
+                P15_50: 1.50,
+                desc: '高磁感取向硅钢',
+                curve: [[0,0],[0.2,50],[0.4,100],[0.6,150],[0.8,220],[1.0,320],
+                        [1.1,450],[1.2,650],[1.3,950],[1.4,1500],[1.5,2800],[1.6,6000]]
+            },
+            '35CM210': { 
+                name: '35CM210', 
+                B50: 1.88, 
+                P15_50: 2.10,
+                desc: '美军标取向硅钢',
+                curve: [[0,0],[0.2,45],[0.4,90],[0.6,140],[0.8,200],[1.0,300],
+                        [1.1,420],[1.2,600],[1.3,900],[1.4,1400],[1.5,2600],[1.6,5500]]
+            },
+            'M19SG': { 
+                name: 'M19SG', 
+                B50: 1.90, 
+                P15_50: 2.20,
+                desc: '美军标高磁感硅钢',
+                curve: [[0,0],[0.2,40],[0.4,85],[0.6,130],[0.8,190],[1.0,280],
+                        [1.1,400],[1.2,580],[1.3,850],[1.4,1300],[1.5,2400],[1.6,5000]]
+            },
+            '35HX': { 
+                name: '35HX', 
+                B50: 1.56, 
+                P15_50: 0.50,
+                desc: '非晶合金(极低损耗)',
+                curve: [[0,0],[0.2,30],[0.4,60],[0.6,100],[0.8,150],[1.0,220],
+                        [1.1,320],[1.2,500],[1.3,800],[1.4,1300],[1.5,2200],[1.6,4000]]
+            }
+        };
+        
+        const u0 = 4 * Math.PI * 1e-7;
+        
+        // ============ 预设方案 ============
+        const PRESETS = {
+            standard: {
+                rated_power: 1500, rated_speed: 3000, poles: 8, D_out: 90, D_in: 58,
+                L_a: 65, Q_s: 36, h_t: 12, b_t: 5, h_j: 6, h_s: 14, b_s: 3.5,
+                delta: 0.5, alpha_p: 0.9, h_m: 3, b_m: 8, pm_material: 'N52',
+                core_material: '35AW300', k_Fe: 0.95, k_c: 1.15, sigma: 1.08,
+                winding_factor: 0.933, N_ph: 50
+            },
+            small: {
+                rated_power: 750, rated_speed: 3000, poles: 8, D_out: 60, D_in: 38,
+                L_a: 45, Q_s: 18, h_t: 10, b_t: 4, h_j: 5, h_s: 10, b_s: 3,
+                delta: 0.35, alpha_p: 0.85, h_m: 2.5, b_m: 5, pm_material: 'N42',
+                core_material: 'DW310', k_Fe: 0.95, k_c: 1.12, sigma: 1.1,
+                winding_factor: 0.902, N_ph: 60
+            },
+            large: {
+                rated_power: 3000, rated_speed: 1500, poles: 8, D_out: 120, D_in: 75,
+                L_a: 85, Q_s: 36, h_t: 14, b_t: 6, h_j: 8, h_s: 16, b_s: 4.5,
+                delta: 0.6, alpha_p: 0.9, h_m: 3.5, b_m: 9, pm_material: 'N48SH',
+                core_material: '35AW300', k_Fe: 0.95, k_c: 1.18, sigma: 1.1,
+                winding_factor: 0.933, N_ph: 40
+            },
+            servo: {
+                rated_power: 200, rated_speed: 3000, poles: 8, D_out: 40, D_in: 24,
+                L_a: 35, Q_s: 12, h_t: 7, b_t: 3, h_j: 4, h_s: 8, b_s: 2.5,
+                delta: 0.3, alpha_p: 0.8, h_m: 2, b_m: 4, pm_material: 'N52',
+                core_material: '35AW300', k_Fe: 0.95, k_c: 1.1, sigma: 1.12,
+                winding_factor: 0.866, N_ph: 80
+            }
+        };
+        
+        // ============ 核心计算函数 ============
+        function getParams() {
+            return {
+                rated_power: parseFloat(document.getElementById('rated_power').value),
+                rated_speed: parseFloat(document.getElementById('rated_speed').value),
+                poles: parseInt(document.getElementById('poles').value),
+                phases: parseInt(document.getElementById('phases').value),
+                D_out: parseFloat(document.getElementById('D_out').value),
+                D_in: parseFloat(document.getElementById('D_in').value),
+                L_a: parseFloat(document.getElementById('L_a').value),
+                Q_s: parseInt(document.getElementById('Q_s').value),
+                h_t: parseFloat(document.getElementById('h_t').value),
+                b_t: parseFloat(document.getElementById('b_t').value),
+                h_j: parseFloat(document.getElementById('h_j').value),
+                h_s: parseFloat(document.getElementById('h_s').value),
+                b_s: parseFloat(document.getElementById('b_s').value),
+                delta: parseFloat(document.getElementById('delta').value),
+                alpha_p: parseFloat(document.getElementById('alpha_p').value),
+                h_m: parseFloat(document.getElementById('h_m').value),
+                b_m: parseFloat(document.getElementById('b_m').value),
+                pm_material: document.getElementById('pm_material').value,
+                core_material: document.getElementById('core_material').value,
+                k_Fe: parseFloat(document.getElementById('k_Fe').value),
+                k_c: parseFloat(document.getElementById('k_c').value),
+                sigma: parseFloat(document.getElementById('sigma').value),
+                winding_factor: parseFloat(document.getElementById('winding_factor').value),
+                N_ph: parseInt(document.getElementById('N_ph').value)
+            };
+        }
+        
+        function setParams(p) {
+            document.getElementById('rated_power').value = p.rated_power;
+            document.getElementById('rated_speed').value = p.rated_speed;
+            document.getElementById('poles').value = p.poles;
+            document.getElementById('phases').value = p.phases;
+            document.getElementById('D_out').value = p.D_out;
+            document.getElementById('D_in').value = p.D_in;
+            document.getElementById('L_a').value = p.L_a;
+            document.getElementById('Q_s').value = p.Q_s;
+            document.getElementById('h_t').value = p.h_t;
+            document.getElementById('b_t').value = p.b_t;
+            document.getElementById('h_j').value = p.h_j;
+            document.getElementById('h_s').value = p.h_s;
+            document.getElementById('b_s').value = p.b_s;
+            document.getElementById('delta').value = p.delta;
+            document.getElementById('alpha_p').value = p.alpha_p;
+            document.getElementById('h_m').value = p.h_m;
+            document.getElementById('b_m').value = p.b_m;
+            document.getElementById('pm_material').value = p.pm_material;
+            document.getElementById('core_material').value = p.core_material;
+            document.getElementById('k_Fe').value = p.k_Fe;
+            document.getElementById('k_c').value = p.k_c;
+            document.getElementById('sigma').value = p.sigma;
+            document.getElementById('winding_factor').value = p.winding_factor;
+            document.getElementById('N_ph').value = p.N_ph;
+        }
+        
+        function interpolateBH(curve, B) {
+            if (B <= curve[0][0]) return curve[0][1];
+            if (B >= curve[curve.length-1][0]) return curve[curve.length-1][1] + (B - curve[curve.length-1][0]) * 5000;
+            
+            for (let i = 0; i < curve.length - 1; i++) {
+                if (curve[i][0] <= B && B <= curve[i+1][0]) {
+                    const ratio = (B - curve[i][0]) / (curve[i+1][0] - curve[i][0]);
+                    return curve[i][1] + ratio * (curve[i+1][1] - curve[i][1]);
+                }
+            }
+            return 500 * B * 1e4;
+        }
+        
+        function iterateAirGapFlux(F_m, delta_e, tau_p, alpha_p, b_t, h_t, h_j, D_in, coreMat) {
+            let B_g = 0.9;
+            const curve = CORE_MATERIALS[coreMat].curve;
+            
+            for (let iter = 0; iter < 50; iter++) {
+                const F_g = B_g * delta_e * 1e-3 / u0 * 2;
+                
+                let B_t = B_g * tau_p / (b_t * 1e-3) * alpha_p;
+                B_t = Math.max(0.1, Math.min(2.0, B_t));
+                const H_t = interpolateBH(curve, B_t);
+                const F_t = H_t * h_t * 1e-3;
+                
+                let B_j = B_g * tau_p / (2 * h_j * 1e-3) * alpha_p;
+                B_j = Math.max(0.1, Math.min(2.0, B_j));
+                const H_j = interpolateBH(curve, B_j);
+                const F_j = H_j * tau_p;
+                
+                const F_total = F_g + F_t + F_j;
+                const error = F_total - F_m;
+                
+                if (Math.abs(error) < 5) break;
+                
+                const gradient = F_total / B_g || 1000;
+                B_g = B_g - error / gradient;
+                B_g = Math.max(0.5, Math.min(1.3, B_g));
+            }
+            
+            return B_g;
+        }
+        
+        function calculate() {
+            const p = getParams();
+            
+            // SI单位
+            const D_in_m = p.D_in * 1e-3;
+            const L_a_m = p.L_a * 1e-3;
+            const delta_m = p.delta * 1e-3;
+            const h_m_m = p.h_m * 1e-3;
+            const b_m_m = p.b_m * 1e-3;
+            
+            // 基础参数
+            const tau_p = Math.PI * D_in_m / p.poles;
+            const q = p.Q_s / (2 * p.phases * (p.poles / 2));
+            const tau_s = Math.PI * D_in_m / p.Q_s;
+            
+            // 永磁体等效
+            const pmData = PM_MATERIALS[p.pm_material];
+            const A_m = b_m_m * L_a_m;
+            const F_m = pmData.Hcb * h_m_m;
+            
+            // 气隙参数
+            const delta_e = p.k_c * delta_m;
+            const A_g = p.alpha_p * tau_p * L_a_m * p.k_Fe;
+            
+            // 迭代求气隙磁密
+            const B_g = iterateAirGapFlux(
+                F_m, delta_e, tau_p, p.alpha_p,
+                p.b_t, p.h_t, p.h_j, p.D_in, p.core_material
+            );
+            
+            // 各部分磁密
+            let B_t = B_g * tau_p / (p.b_t * 1e-3) * p.alpha_p;
+            B_t = Math.max(0.1, Math.min(2.0, B_t));
+            const H_t = interpolateBH(CORE_MATERIALS[p.core_material].curve, B_t);
+            
+            let B_j = B_g * tau_p / (2 * p.h_j * 1e-3) * p.alpha_p;
+            B_j = Math.max(0.1, Math.min(2.0, B_j));
+            const H_j = interpolateBH(CORE_MATERIALS[p.core_material].curve, B_j);
+            
+            // 磁通
+            const Phi_g = B_g * A_g;
+            
+            // 反电动势
+            const f = p.rated_speed * p.poles / 120;
+            const E_0 = 4.44 * f * p.N_ph * p.winding_factor * Phi_g * p.sigma;
+            
+            // 额定转矩
+            const rated_torque = p.rated_power / (p.rated_speed * 2 * Math.PI / 60);
+            
+            // ===== 显示结果 =====
+            let html = `
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="result-value">${B_g.toFixed(3)}</div>
+                        <div class="result-unit">T</div>
+                        <div class="result-label">气隙磁密 ${getStatus(B_g, 0.8, 1.1)}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value">${B_t.toFixed(3)}</div>
+                        <div class="result-unit">T</div>
+                        <div class="result-label">齿部磁密 ${getStatus(B_t, 1.3, 1.7)}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value">${B_j.toFixed(3)}</div>
+                        <div class="result-unit">T</div>
+                        <div class="result-label">轭部磁密 ${getStatus(B_j, 1.0, 1.5)}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value">${E_0.toFixed(1)}</div>
+                        <div class="result-unit">V</div>
+                        <div class="result-label">估算反电动势</div>
+                    </div>
+                </div>
+                
+                <div class="result-detail">
+                    <h3 style="color: #00d9ff; margin-bottom: 15px; font-size: 1em;">详细参数</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">极距 τ_p</span>
+                        <span class="detail-value">${(tau_p * 1000).toFixed(2)} mm</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">每极每相槽数 q</span>
+                        <span class="detail-value">${q.toFixed(2)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">槽距 τ_s</span>
+                        <span class="detail-value">${(tau_s * 1000).toFixed(3)} mm</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">永磁体等效磁势</span>
+                        <span class="detail-value">${F_m.toFixed(0)} A</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">气隙磁通 Φ_g</span>
+                        <span class="detail-value">${(Phi_g * 1e6).toFixed(2)} mWb</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">额定转矩 T_n</span>
+                        <span class="detail-value">${rated_torque.toFixed(2)} N·m</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">电频率 f</span>
+                        <span class="detail-value">${f.toFixed(1)} Hz</span>
+                    </div>
+                </div>
+                
+                <div class="alerts">
+                    ${generateAlerts(B_g, B_t, B_j, E_0, p.rated_voltage || 220)}
+                </div>
+                
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-item">
+                            <div class="bar" style="height: ${Math.min(150, B_g * 120)}px;"></div>
+                            <span class="bar-value">${B_g.toFixed(2)}T</span>
+                            <span class="bar-label">气隙</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: ${Math.min(150, B_t * 100)}px;"></div>
+                            <span class="bar-value">${B_t.toFixed(2)}T</span>
+                            <span class="bar-label">齿部</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: ${Math.min(150, B_j * 100)}px;"></div>
+                            <span class="bar-value">${B_j.toFixed(2)}T</span>
+                            <span class="bar-label">轭部</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('resultContent').innerHTML = html;
+            
+            // 更新示意图
+            updateMotorDiagram(p, tau_p);
+            
+            // 更新参数显示
+            updateDiagramParams(p, tau_p, q);
+            
+            // 敏感性分析
+            runSensitivityAnalysis(p, B_g);
+        }
+        
+        function updateMotorDiagram(p, tau_p) {
+            // 更新尺寸标注
+            document.getElementById('dimDout').textContent = p.D_out + 'mm';
+            document.getElementById('dimDin').textContent = p.D_in + 'mm';
+            document.getElementById('dimDelta').textContent = p.delta + 'mm';
+            document.getElementById('dimHm').textContent = p.h_m + 'mm';
+            
+            // 生成定子槽
+            const slotsGroup = document.getElementById('statorSlots');
+            slotsGroup.innerHTML = '';
+            
+            const Q_s = p.Q_s;
+            const poles = p.poles;
+            const D_out = p.D_out;
+            const D_in = p.D_in;
+            const centerX = 150;
+            const centerY = 150;
+            const scale = 120 / D_out; // 缩放比例
+            
+            const outerR = D_out * scale;
+            const innerR = D_in * scale;
+            
+            for (let i = 0; i < Q_s; i++) {
+                const angle = (i * 360 / Q_s - 90) * Math.PI / 180;
+                const nextAngle = ((i + 1) * 360 / Q_s - 90) * Math.PI / 180;
+                
+                // 槽楔
+                const x1 = centerX + innerR * Math.cos(angle);
+                const y1 = centerY + innerR * Math.sin(angle);
+                const x2 = centerX + innerR * Math.cos(nextAngle);
+                const y2 = centerY + innerR * Math.sin(nextAngle);
+                
+                const slotWidth = Math.min(3, (D_in * Math.PI / Q_s) * scale * 0.8);
+                
+                slotsGroup.innerHTML += `<path d="M${x1},${y1} L${x2},${y2}" stroke="#1a1a2e" stroke-width="${slotWidth}" fill="none"/>`;
+            }
+            
+            // 生成永磁体
+            const pmGroup = document.getElementById('pmMagnets');
+            pmGroup.innerHTML = '';
+            
+            const pmR = (D_in / 2 - p.delta - p.h_m / 2) * scale;
+            const pmWidth = p.h_m * scale * 0.8;
+            
+            for (let i = 0; i < poles; i++) {
+                const angle = (i * 360 / poles - 90) * Math.PI / 180;
+                const x = centerX + pmR * Math.cos(angle);
+                const y = centerY + pmR * Math.sin(angle);
+                
+                // N极红色，S极蓝色
+                const color = i % 2 === 0 ? '#ff5252' : '#2196f3';
+                
+                pmGroup.innerHTML += `
+                    <rect x="${x - pmWidth/2}" y="${y - 6}" width="${pmWidth}" height="12" 
+                          fill="${color}" rx="2" 
+                          transform="rotate(${i * 360 / poles}, ${x}, ${y})"/>
+                `;
+            }
+        }
+        
+        function updateDiagramParams(p, tau_p, q) {
+            document.getElementById('dispPoles').textContent = p.poles + '极';
+            document.getElementById('dispSlots').textContent = p.Q_s + '槽';
+            document.getElementById('dispTauP').textContent = (tau_p * 1000).toFixed(1) + ' mm';
+            document.getElementById('dispQ').textContent = q.toFixed(1);
+            
+            // 材料信息
+            const pmData = PM_MATERIALS[p.pm_material];
+            document.getElementById('dispPmMat').textContent = pmData.name;
+            document.getElementById('dispBr').textContent = pmData.Br.toFixed(2) + 'T';
+            document.getElementById('dispHcb').textContent = (pmData.Hcb / 1000).toFixed(0) + 'kA/m';
+            
+            const coreData = CORE_MATERIALS[p.core_material];
+            document.getElementById('dispCoreMat').textContent = coreData.name;
+        }
+        
+        function getStatus(value, low, high) {
+            if (value >= low && value <= high) {
+                return '<span class="status-badge status-ok">合理</span>';
+            } else if (value < low) {
+                return '<span class="status-badge status-warn">偏低</span>';
+            } else {
+                return '<span class="status-badge status-error">偏高</span>';
+            }
+        }
+        
+        function generateAlerts(B_g, B_t, B_j, E_0, V_rated) {
+            let alerts = [];
+            
+            if (B_t > 1.8) {
+                alerts.push({ type: 'error', msg: '齿部磁密过高 (>1.8T)，可能导致饱和，建议增大齿宽' });
+            }
+            if (B_j > 1.5) {
+                alerts.push({ type: 'error', msg: '轭部磁密过高 (>1.5T)，建议增大轭高' });
+            }
+            if (B_g > 1.2) {
+                alerts.push({ type: 'warning', msg: '气隙磁密偏高 (>1.2T)，需注意高温退磁风险' });
+            }
+            
+            if (B_t < 1.4 && B_t > 0) {
+                alerts.push({ type: 'success', msg: '齿部磁密设计合理，可考虑适当减小以降低成本' });
+            }
+            if (B_g >= 0.8 && B_g <= 1.1) {
+                alerts.push({ type: 'success', msg: '气隙磁密设计合理 ✓' });
+            }
+            
+            if (E_0 > V_rated * 1.1) {
+                alerts.push({ type: 'warning', msg: `反电动势(${E_0.toFixed(1)}V)接近额定电压(${V_rated}V)，注意电压裕量` });
+            }
+            
+            if (alerts.length === 0) {
+                alerts.push({ type: 'success', msg: '各项参数均在合理范围内，设计良好！' });
+            }
+            
+            return alerts.map(a => `
+                <div class="alert alert-${a.type}">
+                    ${a.type === 'success' ? '✓' : a.type === 'warning' ? '⚠' : '✗'} ${a.msg}
+                </div>
+            `).join('');
+        }
+        
+        function runSensitivityAnalysis(p, B_g_base) {
+            const tau_p = Math.PI * p.D_in * 1e-3 / p.poles;
+            const F_m = PM_MATERIALS[p.pm_material].Hcb * p.h_m * 1e-3;
+            
+            // 气隙敏感性
+            const delta_e_plus = p.k_c * (p.delta + 0.1) * 1e-3;
+            const delta_e_minus = p.k_c * (p.delta - 0.1) * 1e-3;
+            
+            const B_g_plus = iterateAirGapFlux(F_m, delta_e_plus, tau_p, p.alpha_p, p.b_t, p.h_t, p.h_j, p.D_in, p.core_material);
+            const B_g_minus = iterateAirGapFlux(F_m, delta_e_minus, tau_p, p.alpha_p, p.b_t, p.h_t, p.h_j, p.D_in, p.core_material);
+            
+            document.getElementById('sens_delta').textContent = ((B_g_plus - B_g_minus) / 2 * 1000).toFixed(1) + 'mT';
+            
+            // 永磁体厚度敏感性
+            const h_m_plus = (p.h_m + 1) * 1e-3;
+            const F_m_plus = PM_MATERIALS[p.pm_material].Hcb * h_m_plus;
+            const B_g_hm = iterateAirGapFlux(F_m_plus, p.k_c * p.delta * 1e-3, tau_p, p.alpha_p, p.b_t, p.h_t, p.h_j, p.D_in, p.core_material);
+            document.getElementById('sens_hm').textContent = ((B_g_hm - B_g_base) * 1000).toFixed(1) + 'mT';
+            
+            // 极弧系数敏感性
+            const alpha_plus = Math.min(1, p.alpha_p + 0.05);
+            const B_g_alpha = iterateAirGapFlux(F_m, p.k_c * p.delta * 1e-3, tau_p, alpha_plus, p.b_t, p.h_t, p.h_j, p.D_in, p.core_material);
+            document.getElementById('sens_alpha').textContent = ((B_g_alpha - B_g_base) * 1000).toFixed(1) + 'mT';
+            
+            // 温度影响 (80°C)
+            const pmData = PM_MATERIALS[p.pm_material];
+            const Hcb_80 = pmData.Hcb * (1 + pmData.alpha_B * 60 / 100);
+            const F_m_80 = Hcb_80 * p.h_m * 1e-3;
+            const B_g_temp = iterateAirGapFlux(F_m_80, p.k_c * p.delta * 1e-3, tau_p, p.alpha_p, p.b_t, p.h_t, p.h_j, p.D_in, p.core_material);
+            document.getElementById('sens_temp').textContent = ((B_g_temp - B_g_base) * 1000).toFixed(1) + 'mT';
+        }
+        
+        function loadPreset(name) {
+            setParams(PRESETS[name]);
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            calculate();
+        }
+        
+        function resetParams() {
+            loadPreset('standard');
+        }
+        
+        // 初始计算
+        window.onload = function() {
+            calculate();
+        };
+    </script>
+</body>
+</html>
