@@ -735,69 +735,70 @@
             
             <!-- 右侧: 定转子示意图 -->
             <div class="card diagram-section">
-                <h2 class="card-title">电机结构示意</h2>
+                <h2 class="card-title">电机横截面结构图</h2>
                 
                 <div class="motor-diagram">
-                    <svg class="svg-container" viewBox="0 0 300 300" id="motorSvg">
-                        <!-- 外圈 (定子外径) -->
-                        <circle cx="150" cy="150" r="140" fill="none" stroke="#444" stroke-width="2"/>
+                    <svg class="svg-container" viewBox="0 0 500 500" id="motorSvg">
+                        <defs>
+                            <!-- 定子铁心渐变 -->
+                            <radialGradient id="statorGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#4a4a6a"/>
+                                <stop offset="100%" stop-color="#2a2a4a"/>
+                            </radialGradient>
+                            <!-- 转子铁心渐变 -->
+                            <radialGradient id="rotorGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#5a5a7a"/>
+                                <stop offset="100%" stop-color="#3a3a5a"/>
+                            </radialGradient>
+                            <!-- N极永磁体 -->
+                            <linearGradient id="pmNGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff6b6b"/>
+                                <stop offset="50%" stop-color="#ee5253"/>
+                                <stop offset="100%" stop-color="#ff6b6b"/>
+                            </linearGradient>
+                            <!-- S极永磁体 -->
+                            <linearGradient id="pmSGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#5f9ea0"/>
+                                <stop offset="50%" stop-color="#48b1bf"/>
+                                <stop offset="100%" stop-color="#5f9ea0"/>
+                            </linearGradient>
+                            <!-- 槽填充 -->
+                            <linearGradient id="slotGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#1a1a2e"/>
+                                <stop offset="100%" stop-color="#0f0f1a"/>
+                            </linearGradient>
+                            <!-- 阴影效果 -->
+                            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/>
+                            </filter>
+                        </defs>
                         
-                        <!-- 定子铁心 (带槽) -->
-                        <circle cx="150" cy="150" r="120" fill="#2a2a4a" stroke="#00d9ff" stroke-width="2"/>
+                        <!-- 中心点 -->
+                        <g id="motorGeometry"></g>
                         
-                        <!-- 定子槽 -->
-                        <g id="statorSlots" stroke="#1a1a2e" stroke-width="1">
-                            <!-- 槽将由JS动态生成 -->
-                        </g>
+                        <!-- 尺寸标注层 -->
+                        <g id="dimensionLabels" font-size="11" fill="#aaa" font-family="Consolas, monospace"></g>
                         
-                        <!-- 气隙圆 -->
-                        <circle cx="150" cy="150" r="90" fill="none" stroke="#00d9ff" stroke-width="2" stroke-dasharray="5,3"/>
-                        
-                        <!-- 转子 -->
-                        <circle cx="150" cy="150" r="80" fill="#3a3a5a" stroke="#ff9800" stroke-width="2"/>
-                        
-                        <!-- 永磁体 -->
-                        <g id="pmMagnets">
-                            <!-- 永磁体将由JS动态生成 -->
-                        </g>
-                        
-                        <!-- 转轴 -->
-                        <circle cx="150" cy="150" r="15" fill="#666" stroke="#888" stroke-width="2"/>
-                        <circle cx="150" cy="150" r="5" fill="#333"/>
-                        
-                        <!-- 标注 -->
-                        <g font-size="10" fill="#888">
-                            <text x="150" y="18" text-anchor="middle">D_out</text>
-                            <line x1="150" y1="20" x2="150" y2="30" stroke="#888"/>
-                            <text x="150" y="42" text-anchor="middle" id="dimDout">90mm</text>
-                            
-                            <text x="150" y="245" text-anchor="middle">D_in</text>
-                            <text x="150" y="258" text-anchor="middle" id="dimDin">58mm</text>
-                            
-                            <text x="10" y="155" dominant-baseline="middle">δ</text>
-                            <text x="25" y="155" dominant-baseline="middle" id="dimDelta">0.5mm</text>
-                            
-                            <text x="150" y="100" text-anchor="middle" fill="#ff9800">h_m</text>
-                            <text x="150" y="113" text-anchor="middle" id="dimHm">3mm</text>
-                        </g>
-                        
-                        <!-- 磁密分布标注 -->
-                        <g id="fluxDensityLegend" font-size="9">
-                            <rect x="220" y="200" width="70" height="80" fill="rgba(0,0,0,0.5)" rx="5"/>
-                            <text x="255" y="218" text-anchor="middle" fill="#00d9ff">磁密 (T)</text>
-                            <rect x="228" y="225" width="12" height="12" fill="#ff5252"/>
-                            <text x="245" y="235" fill="#fff">>1.6</text>
-                            <rect x="228" y="242" width="12" height="12" fill="#00d9ff"/>
-                            <text x="245" y="252" fill="#fff">0.8~1.2</text>
-                            <rect x="228" y="259" width="12" height="12" fill="#00ff88"/>
-                            <text x="245" y="269" fill="#fff"><0.8</text>
+                        <!-- 图例 -->
+                        <g id="motorLegend" transform="translate(380, 20)">
+                            <rect x="0" y="0" width="100" height="90" fill="rgba(0,0,0,0.6)" rx="5" stroke="#444"/>
+                            <text x="50" y="18" text-anchor="middle" fill="#00d9ff" font-size="11" font-weight="bold">图例</text>
+                            <rect x="10" y="28" width="15" height="10" fill="url(#statorGradient)" stroke="#00d9ff" stroke-width="1"/>
+                            <text x="32" y="37" fill="#fff" font-size="10">定子铁心</text>
+                            <rect x="10" y="45" width="15" height="10" fill="url(#rotorGradient)" stroke="#ff9800" stroke-width="1"/>
+                            <text x="32" y="54" fill="#fff" font-size="10">转子铁心</text>
+                            <rect x="10" y="62" width="15" height="10" fill="#ee5253" rx="2"/>
+                            <text x="32" y="71" fill="#fff" font-size="10">N极永磁体</text>
+                            <rect x="55" y="62" width="15" height="10" fill="#48b1bf" rx="2"/>
+                            <text x="77" y="71" fill="#fff" font-size="10">S极</text>
                         </g>
                     </svg>
                     
-                    <div class="diagram-label">
-                        <span style="color:#00d9ff">■</span> 定子铁心 &nbsp;
-                        <span style="color:#ff9800">■</span> 转子 &nbsp;
-                        <span style="color:#ff5252">■</span> 永磁体
+                    <div class="diagram-label" style="margin-top:10px; text-align:center;">
+                        <span style="color:#00d9ff">━</span> 定子 &nbsp;&nbsp;
+                        <span style="color:#ff9800">━</span> 转子 &nbsp;&nbsp;
+                        <span style="color:#ee5253">N</span>/<span style="color:#48b1bf">S</span> 永磁体 &nbsp;&nbsp;
+                        <span style="color:#666">━</span> 气隙
                     </div>
                 </div>
                 
@@ -1246,63 +1247,191 @@
         }
         
         function updateMotorDiagram(p, tau_p) {
-            // 更新尺寸标注
-            document.getElementById('dimDout').textContent = p.D_out + 'mm';
-            document.getElementById('dimDin').textContent = p.D_in + 'mm';
-            document.getElementById('dimDelta').textContent = p.delta + 'mm';
-            document.getElementById('dimHm').textContent = p.h_m + 'mm';
+            // 清除旧图形
+            const motorGeo = document.getElementById('motorGeometry');
+            const dimLabels = document.getElementById('dimensionLabels');
+            motorGeo.innerHTML = '';
+            dimLabels.innerHTML = '';
             
-            // 生成定子槽
-            const slotsGroup = document.getElementById('statorSlots');
-            slotsGroup.innerHTML = '';
+            // 参数
+            const Q_s = p.Q_s;  // 槽数
+            const poles = p.poles;  // 极数
+            const D_out = p.D_out;  // 定子外径
+            const D_in = p.D_in;  // 定子内径
+            const delta = p.delta;  // 气隙
+            const h_m = p.h_m;  // 永磁体厚度
+            const alpha_p = p.alpha_p || 0.75;  // 极弧系数
             
-            const Q_s = p.Q_s;
-            const poles = p.poles;
-            const D_out = p.D_out;
-            const D_in = p.D_in;
-            const centerX = 150;
-            const centerY = 150;
-            const scale = 120 / D_out; // 缩放比例
+            // 画布参数
+            const cx = 200;  // 中心X
+            const cy = 230;  // 中心Y
+            const maxRadius = 165;  // 最大半径(定子外径对应)
+            const scale = maxRadius / D_out;  // 缩放比例
             
-            const outerR = D_out * scale;
-            const innerR = D_in * scale;
+            // 各部分半径
+            const r_out = D_out * scale;  // 定子外径
+            const r_sy = (D_out - p.h_ry * 2) * scale / 2;  // 定子轭部内半径(简化)
+            const r_si = D_in * scale;  // 定子内径(气隙外半径)
+            const r_ri = r_si - delta * scale;  // 转子外半径
+            const r_ro = r_ri - h_m * scale;  // 永磁体内半径
+            const r_axis = h_m * scale * 0.4;  // 转轴半径
+            
+            // ============ 绘制定子铁心 ============
+            motorGeo.innerHTML += `
+                <circle cx="${cx}" cy="${cy}" r="${r_out}" 
+                        fill="url(#statorGradient)" stroke="#00d9ff" stroke-width="2"/>
+            `;
+            
+            // ============ 绘制定子槽 ============
+            const slotDepth = r_out - r_si;
+            const slotWidth = (2 * Math.PI * r_si) / Q_s * 0.7;  // 槽宽
             
             for (let i = 0; i < Q_s; i++) {
-                const angle = (i * 360 / Q_s - 90) * Math.PI / 180;
-                const nextAngle = ((i + 1) * 360 / Q_s - 90) * Math.PI / 180;
+                const angle = (i * 360 / Q_s) * Math.PI / 180 - Math.PI / 2;
+                const slotAngle = (360 / Q_s) * Math.PI / 180;
                 
-                // 槽楔
-                const x1 = centerX + innerR * Math.cos(angle);
-                const y1 = centerY + innerR * Math.sin(angle);
-                const x2 = centerX + innerR * Math.cos(nextAngle);
-                const y2 = centerY + innerR * Math.sin(nextAngle);
+                // 计算槽位置
+                const x1 = cx + r_si * Math.cos(angle - slotAngle * 0.15);
+                const y1 = cy + r_si * Math.sin(angle - slotAngle * 0.15);
+                const x2 = cx + r_si * Math.cos(angle + slotAngle * 0.15);
+                const y2 = cy + r_si * Math.sin(angle + slotAngle * 0.15);
+                const x3 = cx + (r_si + slotDepth) * Math.cos(angle + slotAngle * 0.12);
+                const y3 = cy + (r_si + slotDepth) * Math.sin(angle + slotAngle * 0.12);
+                const x4 = cx + (r_si + slotDepth) * Math.cos(angle - slotAngle * 0.12);
+                const y4 = cy + (r_si + slotDepth) * Math.sin(angle - slotAngle * 0.12);
                 
-                const slotWidth = Math.min(3, (D_in * Math.PI / Q_s) * scale * 0.8);
-                
-                slotsGroup.innerHTML += `<path d="M${x1},${y1} L${x2},${y2}" stroke="#1a1a2e" stroke-width="${slotWidth}" fill="none"/>`;
-            }
-            
-            // 生成永磁体
-            const pmGroup = document.getElementById('pmMagnets');
-            pmGroup.innerHTML = '';
-            
-            const pmR = (D_in / 2 - p.delta - p.h_m / 2) * scale;
-            const pmWidth = p.h_m * scale * 0.8;
-            
-            for (let i = 0; i < poles; i++) {
-                const angle = (i * 360 / poles - 90) * Math.PI / 180;
-                const x = centerX + pmR * Math.cos(angle);
-                const y = centerY + pmR * Math.sin(angle);
-                
-                // N极红色，S极蓝色
-                const color = i % 2 === 0 ? '#ff5252' : '#2196f3';
-                
-                pmGroup.innerHTML += `
-                    <rect x="${x - pmWidth/2}" y="${y - 6}" width="${pmWidth}" height="12" 
-                          fill="${color}" rx="2" 
-                          transform="rotate(${i * 360 / poles}, ${x}, ${y})"/>
+                motorGeo.innerHTML += `
+                    <path d="M${x1},${y1} L${x4},${y4} L${x3},${y3} L${x2},${y2} Z" 
+                          fill="url(#slotGradient)" stroke="#1a1a2e" stroke-width="1"/>
                 `;
             }
+            
+            // 重新绘制定子外圈边框(覆盖槽边缘)
+            motorGeo.innerHTML += `
+                <circle cx="${cx}" cy="${cy}" r="${r_out}" 
+                        fill="none" stroke="#00d9ff" stroke-width="2"/>
+                <circle cx="${cx}" cy="${cy}" r="${r_si}" 
+                        fill="none" stroke="#00d9ff" stroke-width="1" stroke-dasharray="3,2"/>
+            `;
+            
+            // ============ 绘制气隙 ============
+            motorGeo.innerHTML += `
+                <circle cx="${cx}" cy="${cy}" r="${r_si + delta * scale * 0.5}" 
+                        fill="none" stroke="#666" stroke-width="${delta * scale * 0.8}" 
+                        stroke-opacity="0.3"/>
+            `;
+            
+            // ============ 绘制转子铁心 ============
+            motorGeo.innerHTML += `
+                <circle cx="${cx}" cy="${cy}" r="${r_ri}" 
+                        fill="url(#rotorGradient)" stroke="#ff9800" stroke-width="2" filter="url(#shadow)"/>
+            `;
+            
+            // ============ 绘制永磁体 (V型贴面式) ============
+            const pmAngle = (360 / poles) * Math.PI / 180;  // 极距角
+            const pmArcWidth = pmAngle * alpha_p;  // 极弧宽度
+            
+            for (let i = 0; i < poles; i++) {
+                const startAngle = i * pmAngle - Math.PI / 2;
+                const isN = i % 2 === 0;
+                
+                // 永磁体路径(圆弧形)
+                const r_pm_mid = r_ri - h_m * scale * 0.5;
+                const pmThick = h_m * scale * 0.9;
+                
+                // 绘制弧形永磁体
+                const x1 = cx + r_ri * Math.cos(startAngle - pmArcWidth/2);
+                const y1 = cy + r_ri * Math.sin(startAngle - pmArcWidth/2);
+                const x2 = cx + r_ri * Math.cos(startAngle + pmArcWidth/2);
+                const y2 = cy + r_ri * Math.sin(startAngle + pmArcWidth/2);
+                const x3 = cx + (r_ri - pmThick) * Math.cos(startAngle + pmArcWidth/2);
+                const y3 = cy + (r_ri - pmThick) * Math.sin(startAngle + pmArcWidth/2);
+                const x4 = cx + (r_ri - pmThick) * Math.cos(startAngle - pmArcWidth/2);
+                const y4 = cy + (r_ri - pmThick) * Math.sin(startAngle - pmArcWidth/2);
+                
+                const pmColor = isN ? 'url(#pmNGradient)' : 'url(#pmSGradient)';
+                const labelColor = isN ? '#ff6b6b' : '#48b1bf';
+                
+                motorGeo.innerHTML += `
+                    <path d="M${x1},${y1} A${r_ri},${r_ri} 0 0,1 ${x2},${y2} L${x3},${y3} A${r_ri - pmThick},${r_ri - pmThick} 0 0,0 ${x4},${y4} Z"
+                          fill="${pmColor}" stroke="${labelColor}" stroke-width="1"/>
+                `;
+                
+                // 添加N/S标签
+                const labelAngle = startAngle;
+                const labelR = r_ri - h_m * scale * 0.5;
+                const labelX = cx + labelR * Math.cos(labelAngle);
+                const labelY = cy + labelR * Math.sin(labelAngle);
+                
+                motorGeo.innerHTML += `
+                    <text x="${labelX}" y="${labelY}" 
+                          text-anchor="middle" dominant-baseline="middle"
+                          fill="#fff" font-size="12" font-weight="bold"
+                          transform="rotate(${labelAngle * 180 / Math.PI + 90}, ${labelX}, ${labelY})">${isN ? 'N' : 'S'}</text>
+                `;
+            }
+            
+            // ============ 绘制转轴 ============
+            motorGeo.innerHTML += `
+                <circle cx="${cx}" cy="${cy}" r="${r_axis}" 
+                        fill="#555" stroke="#777" stroke-width="2"/>
+                <circle cx="${cx}" cy="${cy}" r="${r_axis * 0.6}" 
+                        fill="#333" stroke="#444" stroke-width="1"/>
+                <circle cx="${cx}" cy="${cy}" r="3" fill="#222"/>
+            `;
+            
+            // ============ 绘制尺寸标注线 ============
+            // 定子外径
+            dimLabels.innerHTML += `
+                <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r_out - 15}" 
+                      stroke="#00d9ff" stroke-width="1" stroke-dasharray="4,2"/>
+                <line x1="${cx - 5}" y1="${cy - r_out - 15}" x2="${cx + 5}" y2="${cy - r_out - 15}" 
+                      stroke="#00d9ff" stroke-width="1"/>
+                <line x1="${cx - 5}" y1="${cy + r_out + 15}" x2="${cx + 5}" y2="${cy + r_out + 15}" 
+                      stroke="#00d9ff" stroke-width="1"/>
+                <text x="${cx + 10}" y="${cy - r_out - 10}" fill="#00d9ff">D_out = ${D_out}mm</text>
+            `;
+            
+            // 定子内径/气隙
+            dimLabels.innerHTML += `
+                <line x1="${cx + r_si + 20}" y1="${cy}" x2="${cx + r_si + 20}" y2="${cy - r_si}" 
+                      stroke="#aaa" stroke-width="1"/>
+                <line x1="${cx + r_si + 15}" y1="${cy}" x2="${cx + r_si + 25}" y2="${cy}" 
+                      stroke="#aaa" stroke-width="1"/>
+                <line x1="${cx + r_si + 15}" y1="${cy - r_si}" x2="${cx + r_si + 25}" y2="${cy - r_si}" 
+                      stroke="#aaa" stroke-width="1"/>
+                <text x="${cx + r_si + 30}" y="${cy - r_si/2}" fill="#aaa">δ=${delta}mm</text>
+            `;
+            
+            // 永磁体厚度
+            const hmAngle = 0;
+            dimLabels.innerHTML += `
+                <line x1="${cx + r_ri + 15}" y1="${cy}" x2="${cx + r_ro - 5}" y2="${cy}" 
+                      stroke="#ff9800" stroke-width="1"/>
+                <line x1="${cx + r_ri + 10}" y1="${cy - 5}" x2="${cx + r_ri + 20}" y2="${cy - 5}" 
+                      stroke="#ff9800" stroke-width="1"/>
+                <line x1="${cx + r_ro - 5}" y1="${cy - 5}" x2="${cx + r_ro - 5}" y2="${cy + 5}" 
+                      stroke="#ff9800" stroke-width="1"/>
+                <text x="${cx + r_ri + 15}" y="${cy - 15}" fill="#ff9800">h_m=${h_m}mm</text>
+            `;
+            
+            // 极对标识
+            const poleCenterAngle = pmAngle / 2;
+            const poleLabelR = r_ri - h_m * scale * 1.3;
+            const poleLabelX = cx + poleLabelR * Math.cos(poleCenterAngle - Math.PI / 2);
+            const poleLabelY = cy + poleLabelR * Math.sin(poleCenterAngle - Math.PI / 2);
+            
+            motorGeo.innerHTML += `
+                <text x="${poleLabelX}" y="${poleLabelY}" 
+                      text-anchor="middle" dominant-baseline="middle"
+                      fill="#fff" font-size="10" opacity="0.8">τ_p</text>
+            `;
+            
+            // 添加极对弧线
+            dimLabels.innerHTML += `
+                <path d="M ${cx + r_ri * 0.7} ${cy - r_ri * 0.2} A ${r_ri * 0.75} ${r_ri * 0.75} 0 0 1 ${cx + r_ri * 0.2} ${cy - r_ri * 0.7}" 
+                      fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+            `;
         }
         
         function updateDiagramParams(p, tau_p, q) {
